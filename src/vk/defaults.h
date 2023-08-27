@@ -140,12 +140,9 @@ extern const VmaAllocationCreateInfo device_allocation_create_info;
 
 #define DEFAULT_VK_SAMPLER\
     .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,\
-    .minFilter = VK_FILTER_LINEAR,\
-    .magFilter = VK_FILTER_LINEAR,\
     .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,\
     .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,\
     .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,\
-    .anisotropyEnable = VK_TRUE,\
     .maxAnisotropy = physical_device_properties->limits.maxSamplerAnisotropy,\
     .borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK,\
     .unnormalizedCoordinates = VK_FALSE,\

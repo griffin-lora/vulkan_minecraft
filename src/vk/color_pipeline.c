@@ -1,5 +1,4 @@
 #include "color_pipeline.h"
-#include "shadow_pipeline.h"
 #include "core.h"
 #include "gfx_core.h"
 #include "asset.h"
@@ -165,79 +164,23 @@ const char* init_color_pipeline(void) {
         &(VkDescriptorSetLayoutCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             
-            .bindingCount = 5,
-            .pBindings = (VkDescriptorSetLayoutBinding[5]) {
+            .bindingCount = 1,
+            .pBindings = (VkDescriptorSetLayoutBinding[1]) {
                 {
                     DEFAULT_VK_DESCRIPTOR_BINDING,
                     .binding = 0,
-                    .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                    .stageFlags = VK_SHADER_STAGE_VERTEX_BIT
-                },
-                {
-                    DEFAULT_VK_DESCRIPTOR_BINDING,
-                    .binding = 1,
-                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
-                },
-                {
-                    DEFAULT_VK_DESCRIPTOR_BINDING,
-                    .binding = 2,
-                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
-                },
-                {
-                    DEFAULT_VK_DESCRIPTOR_BINDING,
-                    .binding = 3,
-                    .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
-                },
-                {
-                    DEFAULT_VK_DESCRIPTOR_BINDING,
-                    .binding = 4,
                     .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                     .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
                 }
             }
         },
-        (descriptor_info_t[5]) {
-            {
-                .type = descriptor_info_type_buffer,
-                .buffer = {
-                    .buffer = shadow_view_projection_buffer,
-                    .offset = 0,
-                    .range = sizeof(shadow_view_projection)
-                }
-            },
+        (descriptor_info_t[1]) {
             {
                 .type = descriptor_info_type_image,
                 .image = {
                     .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     .imageView = texture_image_views[0],
                     .sampler = texture_image_sampler
-                }
-            },
-            {
-                .type = descriptor_info_type_image,
-                .image = {
-                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    .imageView = texture_image_views[1],
-                    .sampler = texture_image_sampler
-                }
-            },
-            {
-                .type = descriptor_info_type_image,
-                .image = {
-                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    .imageView = texture_image_views[2],
-                    .sampler = texture_image_sampler
-                }
-            },
-            {
-                .type = descriptor_info_type_image,
-                .image = {
-                    .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    .imageView = shadow_image_view,
-                    .sampler = shadow_texture_image_sampler
                 }
             }
         },
@@ -290,8 +233,8 @@ const char* init_color_pipeline(void) {
         .pVertexInputState = &(VkPipelineVertexInputStateCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         
-            .vertexBindingDescriptionCount = 3,
-            .pVertexBindingDescriptions = (VkVertexInputBindingDescription[3]) {
+            .vertexBindingDescriptionCount = 2,
+            .pVertexBindingDescriptions = (VkVertexInputBindingDescription[2]) {
                 {
                     .binding = 0,
                     .stride = sizeof(mat4s),
@@ -301,16 +244,11 @@ const char* init_color_pipeline(void) {
                     .binding = 1,
                     .stride = num_vertex_bytes_array[GENERAL_PIPELINE_VERTEX_ARRAY_INDEX],
                     .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-                },
-                {
-                    .binding = 2,
-                    .stride = num_vertex_bytes_array[COLOR_PIPELINE_VERTEX_ARRAY_INDEX],
-                    .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
                 }
             },
 
-            .vertexAttributeDescriptionCount = 8,
-            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[8]) {
+            .vertexAttributeDescriptionCount = 6,
+            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[6]) {
                 {
                     .binding = 0,
                     .location = 0,
@@ -343,22 +281,10 @@ const char* init_color_pipeline(void) {
                     .offset = offsetof(general_pipeline_vertex_t, position)
                 },
                 {
-                    .binding = 2,
+                    .binding = 1,
                     .location = 5,
-                    .format = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset = offsetof(color_pipeline_vertex_t, normal)
-                },
-                {
-                    .binding = 2,
-                    .location = 6,
-                    .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                    .offset = offsetof(color_pipeline_vertex_t, tangent)
-                },
-                {
-                    .binding = 2,
-                    .location = 7,
                     .format = VK_FORMAT_R32G32_SFLOAT,
-                    .offset = offsetof(color_pipeline_vertex_t, tex_coord)
+                    .offset = offsetof(general_pipeline_vertex_t, tex_coord)
                 }
             }
         },
@@ -401,14 +327,11 @@ const char* draw_color_pipeline(size_t frame_index, size_t image_index, VkComman
     );
 
     for (size_t i = 0; i < NUM_MODELS; i++) {
-        color_pipeline_push_constants.layer_index = (float)i;
-
         vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(color_pipeline_push_constants), &color_pipeline_push_constants);
 
-        bind_vertex_buffers(command_buffer, 3, (VkBuffer[3]) {
+        bind_vertex_buffers(command_buffer, 2, (VkBuffer[2]) {
             instance_buffers[i],
-            vertex_buffer_arrays[i][GENERAL_PIPELINE_VERTEX_ARRAY_INDEX],
-            vertex_buffer_arrays[i][COLOR_PIPELINE_VERTEX_ARRAY_INDEX]
+            vertex_buffer_arrays[i][GENERAL_PIPELINE_VERTEX_ARRAY_INDEX]
         });
         vkCmdBindIndexBuffer(command_buffer, index_buffers[i], 0, VK_INDEX_TYPE_UINT16);
         vkCmdDrawIndexed(command_buffer, num_indices_array[i], num_instances_array[i], 0, 0, 0);

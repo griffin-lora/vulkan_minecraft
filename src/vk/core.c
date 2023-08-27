@@ -2,7 +2,6 @@
 #include "util.h"
 #include "result.h"
 #include "gfx_pipeline.h"
-#include "shadow_pipeline.h"
 #include "color_pipeline.h"
 #include "asset.h"
 #include "gfx_core.h"
@@ -520,9 +519,6 @@ const char* init_vulkan_core(void) {
     if (msg != NULL) { return msg; }
 
     msg = init_vulkan_graphics_pipelines();
-    if (msg != NULL) { return msg; }
-
-    msg = draw_shadow_pipeline();
     if (msg != NULL) { return msg; }
 
     vkGetSwapchainImagesKHR(device, swapchain, &num_swapchain_images, NULL);

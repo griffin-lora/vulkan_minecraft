@@ -35,27 +35,14 @@ VkImage texture_images[NUM_TEXTURE_IMAGES];
 VmaAllocation texture_image_allocations[NUM_TEXTURE_IMAGES];
 VkImageView texture_image_views[NUM_TEXTURE_IMAGES];
 
-VkSampler shadow_texture_image_sampler;
-mat4s shadow_view_projection;
-VkBuffer shadow_view_projection_buffer;
-VmaAllocation shadow_view_projection_buffer_allocation;
-
 const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device_properties) {
     struct {
         const char* path;
         int channels;
     } image_load_infos[][NUM_TEXTURE_LAYERS] = {
         {
-            { "image/cube_color.tga", STBI_rgb_alpha },
-            { "image/plane_color.jpg", STBI_rgb_alpha }
-        },
-        {
-            { "image/cube_normal.tga", STBI_rgb },
-            { "image/plane_normal.png", STBI_rgb }
-        },
-        {
-            { "image/cube_specular.tga", STBI_rgb },
-            { "image/plane_specular.png", STBI_rgb }
+            { "image/cube_voxel_0.png", STBI_rgb },
+            { "image/cube_voxel_1.png", STBI_rgb }
         }
     };
 
@@ -63,29 +50,13 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     image_create_info_t image_create_infos[NUM_TEXTURE_IMAGES] = {
         {
-            .num_pixel_bytes = 4,
-            .info = {
-                DEFAULT_VK_SAMPLED_IMAGE,
-                .format = VK_FORMAT_R8G8B8A8_SRGB,
-                .arrayLayers = NUM_TEXTURE_LAYERS
-            }
-        },
-        {
             .num_pixel_bytes = 3,
             .info = {
                 DEFAULT_VK_SAMPLED_IMAGE,
-                .format = VK_FORMAT_R8G8B8_UNORM, // USE UNORM FOR ANY NON COLOR TEXTURE, SRGB WILL FUCK UP YOUR NORMAL TEXTURE SO BAD
+                .format = VK_FORMAT_R8G8B8_SRGB,
                 .arrayLayers = NUM_TEXTURE_LAYERS
             }
-        },
-        {
-            .num_pixel_bytes = 3,
-            .info = {
-                DEFAULT_VK_SAMPLED_IMAGE,
-                .format = VK_FORMAT_R8G8B8_UNORM,
-                .arrayLayers = NUM_TEXTURE_LAYERS
-            }
-        },
+        }
     };
 
     for (size_t i = 0; i < NUM_TEXTURE_IMAGES; i++) {
@@ -193,24 +164,6 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     //
 
-    vec3s light_direction = glms_vec3_normalize((vec3s) {{ -0.8f, -0.6f, 0.4f }});
-    vec3s light_position = glms_vec3_scale(glms_vec3_negate(light_direction), 40.0f);
-
-    mat4s projection = glms_ortho(-60.0f, 60.0f, -60.0f, 60.0f, 0.01f, 300.0f);
-
-    mat4s view = glms_look(light_position, light_direction, (vec3s) {{ 0.0f, -1.0f, 0.0f }});
-
-    mat4s shadow_view_projection = glms_mat4_mul(projection, view);
-    void* shadow_view_projection_ptr = &shadow_view_projection;
-
-    uint32_t num_shadow_view_projection_bytes = sizeof(shadow_view_projection);
-
-    staging_t shadow_view_projection_staging;
-    if (begin_buffers(1, &uniform_buffer_create_info, 1, &shadow_view_projection_ptr, &num_shadow_view_projection_bytes, &shadow_view_projection_staging, &shadow_view_projection_buffer, &shadow_view_projection_buffer_allocation) != result_success) {
-        return "Failed to create shadow view projection buffer\n";
-    }
-    //
-    
     VkFence transfer_fence;
     if (vkCreateFence(device, &(VkFenceCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
@@ -240,7 +193,6 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         transfer_buffers(command_buffer, num_indices_array[i], 1, &num_index_bytes, &index_stagings[i], &index_buffers[i]);
         transfer_buffers(command_buffer, num_instances_array[i], 1, &num_instance_bytes, &instance_stagings[i], &instance_buffers[i]);
     }
-    transfer_buffers(command_buffer, 1, 1, &num_shadow_view_projection_bytes, &shadow_view_projection_staging, &shadow_view_projection_buffer);
 
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
         return "Failed to write to transfer command buffer\n";
@@ -264,7 +216,6 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         end_buffers(1, &index_stagings[i]);
         end_buffers(1, &instance_stagings[i]);
     }
-    end_buffers(1, &shadow_view_projection_staging);
 
     //
 
@@ -286,16 +237,11 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     if (vkCreateSampler(device, &(VkSamplerCreateInfo) {
         DEFAULT_VK_SAMPLER,
+        .minFilter = VK_FILTER_NEAREST,
+        .magFilter = VK_FILTER_NEAREST,
+        .anisotropyEnable = VK_FALSE,
         .maxLod = (float)image_create_infos[0].info.mipLevels
     }, NULL, &texture_image_sampler) != VK_SUCCESS) {
-        return "Failed to create tetxure image sampler\n";
-    }
-
-    if (vkCreateSampler(device, &(VkSamplerCreateInfo) {
-        DEFAULT_VK_SAMPLER,
-        .compareEnable = VK_TRUE,
-        .compareOp = VK_COMPARE_OP_LESS
-    }, NULL, &shadow_texture_image_sampler) != VK_SUCCESS) {
         return "Failed to create tetxure image sampler\n";
     }
 
@@ -303,10 +249,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 }
 
 void term_vulkan_assets(void) {
-    vmaDestroyBuffer(allocator, shadow_view_projection_buffer, shadow_view_projection_buffer_allocation);
-
     vkDestroySampler(device, texture_image_sampler, NULL);
-    vkDestroySampler(device, shadow_texture_image_sampler, NULL);
     destroy_images(NUM_TEXTURE_IMAGES, texture_images, texture_image_allocations, texture_image_views);
 
     for (size_t i = 0; i < NUM_MODELS; i++) {
