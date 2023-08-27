@@ -15,7 +15,17 @@
     "nodes" : [
         {
             "mesh" : 0,
-            "name" : "Plane"
+            "name" : "Plane",
+            "scale" : [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "translation" : [
+                0.5,
+                0,
+                -0.5
+            ]
         }
     ],
     "meshes" : [

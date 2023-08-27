@@ -5,6 +5,7 @@
 #include "util.h"
 #include "mesh.h"
 #include "defaults.h"
+#include "voxel/face.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -237,7 +238,7 @@ const char* init_color_pipeline(void) {
             .pVertexBindingDescriptions = (VkVertexInputBindingDescription[2]) {
                 {
                     .binding = 0,
-                    .stride = sizeof(mat4s),
+                    .stride = sizeof(face_t),
                     .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
                 },
                 {
@@ -247,42 +248,23 @@ const char* init_color_pipeline(void) {
                 }
             },
 
-            .vertexAttributeDescriptionCount = 6,
-            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[6]) {
+            .vertexAttributeDescriptionCount = 3,
+            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[3]) {
                 {
                     .binding = 0,
                     .location = 0,
-                    .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                    .offset = 0*sizeof(vec4s)
+                    .format = VK_FORMAT_R32G32B32_SFLOAT,
+                    .offset = offsetof(face_t, position)
                 },
-                {
-                    .binding = 0,
-                    .location = 1,
-                    .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                    .offset = 1*sizeof(vec4s)
-                },
-                {
-                    .binding = 0,
-                    .location = 2,
-                    .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                    .offset = 2*sizeof(vec4s)
-                },
-                {
-                    .binding = 0,
-                    .location = 3,
-                    .format = VK_FORMAT_R32G32B32A32_SFLOAT,
-                    .offset = 3*sizeof(vec4s)
-                },
-                //
                 {
                     .binding = 1,
-                    .location = 4,
+                    .location = 1,
                     .format = VK_FORMAT_R32G32B32_SFLOAT,
                     .offset = offsetof(general_pipeline_vertex_t, position)
                 },
                 {
                     .binding = 1,
-                    .location = 5,
+                    .location = 2,
                     .format = VK_FORMAT_R32G32_SFLOAT,
                     .offset = offsetof(general_pipeline_vertex_t, tex_coord)
                 }

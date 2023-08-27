@@ -5,6 +5,7 @@
 #include "gfx_core.h"
 #include "color_pipeline.h"
 #include "defaults.h"
+#include "voxel/face.h"
 #include <malloc.h>
 #include <string.h>
 #include <stdalign.h>
@@ -103,27 +104,24 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     }
 
     const char* mesh_paths[] = {
-        "mesh/cube.gltf",
-        "mesh/plane.gltf"
+        "mesh/cube_voxel_top_face.gltf"
     };
 
-    mat4s cube_model_matrices[81];
+    face_t faces[64];
     {
         size_t i = 0;
-        for (float x = -4.0f; x <= 4.0f; x++) {
-            for (float y = -4.0f; y <= 4.0f; y++, i++) {
-                cube_model_matrices[i] = glms_translate(glms_mat4_identity(), (vec3s) {{ x * 8.0f, 1.0f, y * 8.0f }});
+        for (float x = 0.0f; x < 8.0f; x++) {
+            for (float y = 0.0f; y < 8.0f; y++, i++) {
+                faces[i] = (face_t) {
+                    .position = {{ x * 4.0f, 0.0f, y * 4.0f }}
+                };
             }
         }
     }
 
-    mat4s plane_model_matrix = glms_scale(glms_mat4_identity(), (vec3s) {{ 40.0f, 40.0f, 40.0f }});
-
-    num_instances_array[0] = NUM_ELEMS(cube_model_matrices);
-    num_instances_array[1] = 1;
+    num_instances_array[0] = NUM_ELEMS(faces);
     void* model_matrix_arrays[] = {
-        cube_model_matrices,
-        &plane_model_matrix
+        faces
     };
 
     uint32_t num_vertices_array[NUM_MODELS];
@@ -133,7 +131,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     staging_t instance_stagings[NUM_MODELS];
 
     uint32_t num_index_bytes = sizeof(uint16_t);
-    uint32_t num_instance_bytes = sizeof(mat4s);
+    uint32_t num_instance_bytes = sizeof(face_t);
 
     for (size_t i = 0; i < NUM_MODELS; i++) {
         mesh_t mesh;
