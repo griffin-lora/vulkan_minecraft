@@ -1,7 +1,12 @@
 #pragma once
-#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <cglm/struct/vec3.h>
+#include <stddef.h>
+#include <stdint.h>
 
-typedef struct {
-    vec3s position;
+typedef union {
+    uint32_t info;
+    struct {
+        uint8_t x;
+        uint8_t y;
+        uint8_t z;
+    } position;
 } face_t;

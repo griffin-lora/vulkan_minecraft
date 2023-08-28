@@ -253,8 +253,8 @@ const char* init_color_pipeline(void) {
                 {
                     .binding = 0,
                     .location = 0,
-                    .format = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset = offsetof(face_t, position)
+                    .format = VK_FORMAT_R32_UINT,
+                    .offset = offsetof(face_t, info)
                 },
                 {
                     .binding = 1,

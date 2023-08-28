@@ -110,10 +110,10 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     face_t faces[64];
     {
         size_t i = 0;
-        for (float x = 0.0f; x < 8.0f; x++) {
-            for (float y = 0.0f; y < 8.0f; y++, i++) {
+        for (uint8_t x = 0; x < 8; x++) {
+            for (uint8_t y = 0; y < 8; y++, i++) {
                 faces[i] = (face_t) {
-                    .position = {{ x * 4.0f, 0.0f, y * 4.0f }}
+                    .position = { x, 0, y }
                 };
             }
         }
