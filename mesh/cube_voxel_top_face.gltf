@@ -15,22 +15,12 @@
     "nodes" : [
         {
             "mesh" : 0,
-            "name" : "Plane",
-            "scale" : [
-                0.5,
-                0.5,
-                0.5
-            ],
-            "translation" : [
-                0.5,
-                0,
-                -0.5
-            ]
+            "name" : "Plane"
         }
     ],
     "meshes" : [
         {
-            "name" : "Plane",
+            "name" : "Plane.001",
             "primitives" : [
                 {
                     "attributes" : {
@@ -52,10 +42,10 @@
             "max" : [
                 1,
                 0,
-                1
+                0
             ],
             "min" : [
-                -1,
+                0,
                 0,
                 -1
             ],
@@ -116,7 +106,7 @@
     "buffers" : [
         {
             "byteLength" : 204,
-            "uri" : "data:application/octet-stream;base64,AACAvwAAAAAAAIA/AACAPwAAAAAAAIA/AACAvwAAAAAAAIC/AACAPwAAAAAAAIC/AAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAACAPwAAAAAAAACAAACAPwAAgD8AAAAAAAAAgAAAgD8AAIA/AAAAAAAAAIAAAIA/AACAPwAAAAAAAACAAACAPwAAAAAAAIA/AACAPwAAgD8AAAAAAAAAAAAAgD8AAAAAAAABAAMAAAADAAIA"
+            "uri" : "data:application/octet-stream;base64,AAAAAAAAAAAAAACAAACAPwAAAAAAAACAAAAAAAAAAAAAAIC/AACAPwAAAAAAAIC/AAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAAAAAAAAgD8AAACAAACAPwAAAAAAAACAAACAPwAAgD8AAAAAAAAAgAAAgD8AAIA/AAAAAAAAAIAAAIA/AACAPwAAAAAAAACAAACAPwAAAAAAAIA/AACAPwAAgD8AAAAAAAAAAAAAgD8AAAAAAAABAAMAAAADAAIA"
         }
     ]
 }
