@@ -111,9 +111,10 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     }
 
     cube_voxel_render_info.top.num_instances = NUM_ELEMS(face_instances);
-    void* face_instances_array[] = {
-        face_instances
-    };
+    union {
+        CUBE_VOXEL_UNION(void*)
+    } voxel_face_instances;
+    voxel_face_instances.top = face_instances;
 
     uint32_t num_vertices_array[NUM_CUBE_VOXEL_FACES];
 
@@ -132,6 +133,9 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     }
 
     for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
+        // cube_voxel_render_info.faces[i].num_instances = NUM_ELEMS(face_instances);
+        // voxel_face_instances.faces[i] = face_instances;
+
         const voxel_face_mesh_t* mesh = &cube_face_meshes[i];
         voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
         voxel_face_allocation_info_t* allocation_info = &cube_voxel_allocation_info.faces[i];
@@ -148,7 +152,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         }
 
         if (render_info->num_instances != 0) {
-            if (begin_buffers(render_info->num_instances, &vertex_buffer_create_info, 1, &face_instances_array[0], &num_instance_bytes, &instance_stagings[i], &render_info->instance_buffer, &allocation_info->instance_allocation) != result_success) {
+            if (begin_buffers(render_info->num_instances, &vertex_buffer_create_info, 1, &voxel_face_instances.faces[i], &num_instance_bytes, &instance_stagings[i], &render_info->instance_buffer, &allocation_info->instance_allocation) != result_success) {
                 return "Failed to begin creating instance buffer\n";
             }
         }
@@ -213,7 +217,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
         end_buffers(1, &vertex_stagings[i]);
         end_buffers(1, &index_stagings[i]);
-        if (cube_voxel_render_info.faces->num_instances != 0) {
+        if (cube_voxel_render_info.faces[i].num_instances != 0) {
             end_buffers(1, &instance_stagings[i]);
         }
     }
