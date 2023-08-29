@@ -104,7 +104,8 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         for (uint8_t x = 0; x < 8; x++) {
             for (uint8_t y = 0; y < 8; y++, i++) {
                 face_instances[i] = (voxel_face_instance_t) {
-                    .position = { x, 0, y }
+                    .position = { x, 0, y },
+                    .texture_array_index = i % 2
                 };
             }
         }

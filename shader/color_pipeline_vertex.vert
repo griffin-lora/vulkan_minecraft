@@ -21,10 +21,11 @@ void main() {
     uint x = face_info & 0x000000ffu;
     uint y = (face_info & 0x0000ff00u) >> 1u*8u;
     uint z = (face_info & 0x00ff0000u) >> 2u*8u;
+    uint texture_array_index = (face_info & 0xff000000u) >> 3u*8u;
 
     vec3 face_position = vec3(x, y, z);
 
 	gl_Position = view_projection * model * vec4(face_position + vertex_position, 1.0);
 
-	frag_tex_coord = vec3(tex_coord, 0.0);
+	frag_tex_coord = vec3(tex_coord, texture_array_index);
 }
