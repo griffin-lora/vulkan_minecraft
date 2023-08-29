@@ -18,9 +18,11 @@
 #include <cglm/struct/affine.h>
 
 alignas(64)
+voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL_FACE_TYPES];
+voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES];
 
-cube_voxel_render_info_t cube_voxel_render_info = { 0 };
-cube_voxel_allocation_info_t cube_voxel_allocation_info = { 0 };
+voxel_region_render_info_t voxel_region_render_info;
+voxel_region_allocation_info_t voxel_region_allocation_info;
 
 VkSampler texture_image_sampler;
 VkImage texture_images[NUM_TEXTURE_IMAGES];
@@ -111,35 +113,33 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         }
     }
 
-    cube_voxel_render_info.top.num_instances = NUM_ELEMS(face_instances);
-    union {
-        CUBE_VOXEL_UNION(void*)
-    } voxel_face_instances;
-    voxel_face_instances.top = face_instances;
+    voxel_region_render_info.face_model_infos[2].num_instances = NUM_ELEMS(face_instances);
+    void* voxel_face_instance_arrays[NUM_VOXEL_FACE_TYPES];
+    voxel_face_instance_arrays[2] = face_instances;
 
-    uint32_t num_vertices_array[NUM_CUBE_VOXEL_FACE_TYPES];
+    uint32_t num_vertices_array[NUM_VOXEL_FACE_TYPES];
 
-    staging_t vertex_stagings[NUM_CUBE_VOXEL_FACE_TYPES];
-    staging_t index_stagings[NUM_CUBE_VOXEL_FACE_TYPES];
-    staging_t instance_stagings[NUM_CUBE_VOXEL_FACE_TYPES];
+    staging_t vertex_stagings[NUM_VOXEL_FACE_TYPES];
+    staging_t index_stagings[NUM_VOXEL_FACE_TYPES];
+    staging_t instance_stagings[NUM_VOXEL_FACE_TYPES];
 
     uint32_t num_vertex_bytes = sizeof(voxel_vertex_t);
     uint32_t num_index_bytes = sizeof(uint16_t);
     uint32_t num_instance_bytes = sizeof(voxel_face_instance_t);
 
-    voxel_face_type_mesh_t cube_face_type_meshes[NUM_CUBE_VOXEL_FACE_TYPES];
+    voxel_face_type_mesh_t cube_face_type_meshes[NUM_VOXEL_FACE_TYPES];
 
-    if (load_gltf_voxel_face_type_meshes(mesh_paths[0], NUM_CUBE_VOXEL_FACE_TYPES, (const char*[]) { "Front", "Back", "Top", "Bottom", "Right", "Left" }, cube_face_type_meshes) != result_success) {
+    if (load_gltf_voxel_face_type_meshes(mesh_paths[0], NUM_VOXEL_FACE_TYPES, (const char*[]) { "Front", "Back", "Top", "Bottom", "Right", "Left" }, cube_face_type_meshes) != result_success) {
         return "Failed to load mesh\n";
     }
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
+    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
         // cube_voxel_render_info.faces[i].num_instances = NUM_ELEMS(face_instances);
         // voxel_face_instances.faces[i] = face_instances;
 
         const voxel_face_type_mesh_t* mesh = &cube_face_type_meshes[i];
-        voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
-        voxel_face_allocation_info_t* allocation_info = &cube_voxel_allocation_info.faces[i];
+        voxel_face_type_render_info_t* render_info = &voxel_face_type_render_infos[i];
+        voxel_face_type_allocation_info_t* allocation_info = &voxel_face_type_allocation_infos[i];
 
         num_vertices_array[i] = mesh->num_vertices;
         render_info->num_indices = mesh->num_indices;
@@ -152,14 +152,19 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
             return "Failed to begin creating index buffer\n";
         }
 
+        free(mesh->vertices_data);
+        free(mesh->indices_data);
+    }
+
+    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
+        voxel_face_model_render_info_t* render_info = &voxel_region_render_info.face_model_infos[i];
+        voxel_face_model_allocation_info_t* allocation_info = &voxel_region_allocation_info.face_model_infos[i];
+
         if (render_info->num_instances != 0) {
-            if (begin_buffers(render_info->num_instances, &vertex_buffer_create_info, 1, &voxel_face_instances.faces[i], &num_instance_bytes, &instance_stagings[i], &render_info->instance_buffer, &allocation_info->instance_allocation) != result_success) {
+            if (begin_buffers(render_info->num_instances, &vertex_buffer_create_info, 1, &voxel_face_instance_arrays[i], &num_instance_bytes, &instance_stagings[i], &render_info->instance_buffer, &allocation_info->instance_allocation) != result_success) {
                 return "Failed to begin creating instance buffer\n";
             }
         }
-
-        free(mesh->vertices_data);
-        free(mesh->indices_data);
     }
 
     //
@@ -188,13 +193,14 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     transfer_images(command_buffer, NUM_TEXTURE_IMAGES, image_create_infos, image_stagings, texture_images);
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
-        const voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
+    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
+        const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[i];
+        const voxel_face_model_render_info_t* model_render_info = &voxel_region_render_info.face_model_infos[i];
 
-        transfer_buffers(command_buffer, num_vertices_array[i], 1, &num_vertex_bytes, &vertex_stagings[i], &render_info->vertex_buffer);
-        transfer_buffers(command_buffer, render_info->num_indices, 1, &num_index_bytes, &index_stagings[i], &render_info->index_buffer);
-        if (render_info->num_instances != 0) {
-            transfer_buffers(command_buffer, render_info->num_instances, 1, &num_instance_bytes, &instance_stagings[i], &render_info->instance_buffer);
+        transfer_buffers(command_buffer, num_vertices_array[i], 1, &num_vertex_bytes, &vertex_stagings[i], &type_render_info->vertex_buffer);
+        transfer_buffers(command_buffer, type_render_info->num_indices, 1, &num_index_bytes, &index_stagings[i], &type_render_info->index_buffer);
+        if (model_render_info->num_instances != 0) {
+            transfer_buffers(command_buffer, model_render_info->num_instances, 1, &num_instance_bytes, &instance_stagings[i], &model_render_info->instance_buffer);
         }
     }
 
@@ -215,10 +221,10 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     end_images(NUM_TEXTURE_IMAGES, image_stagings);
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
+    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
         end_buffers(1, &vertex_stagings[i]);
         end_buffers(1, &index_stagings[i]);
-        if (cube_voxel_render_info.faces[i].num_instances != 0) {
+        if (voxel_region_render_info.face_model_infos[i].num_instances != 0) {
             end_buffers(1, &instance_stagings[i]);
         }
     }
@@ -258,14 +264,17 @@ void term_vulkan_assets(void) {
     vkDestroySampler(device, texture_image_sampler, NULL);
     destroy_images(NUM_TEXTURE_IMAGES, texture_images, texture_image_allocations, texture_image_views);
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
-        const voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
-        const voxel_face_allocation_info_t* allocation_info = &cube_voxel_allocation_info.faces[i];
+    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
+        const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[i];
+        const voxel_face_type_allocation_info_t* type_allocation_info = &voxel_face_type_allocation_infos[i];
 
-        vmaDestroyBuffer(allocator, render_info->vertex_buffer, allocation_info->vertex_allocation);
-        vmaDestroyBuffer(allocator, render_info->index_buffer, allocation_info->index_allocation);
-        if (render_info->num_instances != 0) {
-            vmaDestroyBuffer(allocator, render_info->instance_buffer, allocation_info->instance_allocation);
+        const voxel_face_model_render_info_t* model_render_info = &voxel_region_render_info.face_model_infos[i];
+        const voxel_face_model_allocation_info_t* model_allocation_info = &voxel_region_allocation_info.face_model_infos[i];
+
+        vmaDestroyBuffer(allocator, type_render_info->vertex_buffer, type_allocation_info->vertex_allocation);
+        vmaDestroyBuffer(allocator, type_render_info->index_buffer, type_allocation_info->index_allocation);
+        if (model_render_info->num_instances != 0) {
+            vmaDestroyBuffer(allocator, model_render_info->instance_buffer, model_allocation_info->instance_allocation);
         }
     }
 }

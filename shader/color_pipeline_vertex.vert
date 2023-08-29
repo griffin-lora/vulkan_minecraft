@@ -6,7 +6,7 @@ layout(push_constant, std430) uniform push_constants_t {
 };
 
 // layout(binding = 0) uniform uniform_constants_t {
-//     mat4 model;
+//     vec3 face_model_position;
 // };
 
 layout(location = 0) in uint face_instance_info;
@@ -16,7 +16,7 @@ layout(location = 2) in vec2 tex_coord;
 layout(location = 0) out vec3 frag_tex_coord;
 
 void main() {
-    mat4 model = mat4(1.0);
+    vec3 face_model_position = vec3(0.0, 0.0, 0.0);
 
     uint x = face_instance_info & 0x000000ffu;
     uint y = (face_instance_info & 0x0000ff00u) >> 1u*8u;
@@ -25,7 +25,7 @@ void main() {
 
     vec3 face_instance_position = vec3(x, y, z);
 
-	gl_Position = view_projection * model * vec4(face_instance_position + vertex_position, 1.0);
+	gl_Position = view_projection * vec4(face_instance_position + face_model_position + vertex_position, 1.0);
 
 	frag_tex_coord = vec3(tex_coord, texture_array_index);
 }
