@@ -6,6 +6,26 @@
 #include <malloc.h>
 #include <string.h>
 #include <vk_mem_alloc.h>
+#include <stb_perlin.h>
+
+void create_voxel_region_voxel_types(voxel_region_voxel_types_t* voxel_types) {
+    float amplitude = 20.0f;
+    float frequency = 0.01f;
+    float lacunarity = 3.0f;
+    float gain = 0.4f;
+    int octaves = 6;
+
+    for (uint8_t x = 0; x < VOXEL_REGION_SIZE; x++)
+    for (uint8_t z = 0; z < VOXEL_REGION_SIZE; z++) {
+        float height = amplitude * ((stb_perlin_fbm_noise3(x*frequency, 0.0f, z*frequency, lacunarity, gain, octaves) + 1.0f) / 2.0f);
+        uint32_t world_height = (uint32_t)height;
+        for (uint32_t y = 0; y < VOXEL_REGION_SIZE; y++) {
+            if (y <= world_height) {
+                voxel_types->types[x][y][z] = voxel_type_grass;
+            }
+        }
+    }
+}
 
 typedef struct {
     uint32_t num_instances;
