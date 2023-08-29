@@ -85,7 +85,7 @@ result_t load_gltf_mesh(const char* path, mesh_t* mesh) {
     return result_success;
 }
 
-static result_t load_voxel_face_mesh(const cgltf_mesh* mesh_data, voxel_face_mesh_t* face) {
+static result_t load_voxel_face_type_mesh(const cgltf_mesh* mesh_data, voxel_face_type_mesh_t* face) {
     if (mesh_data->primitives_count != 1) {
         return result_failure;
     }
@@ -122,7 +122,7 @@ static result_t load_voxel_face_mesh(const cgltf_mesh* mesh_data, voxel_face_mes
 
     memcpy(indices, indices_data, num_indices*sizeof(uint16_t));
     
-    *face = (voxel_face_mesh_t) {
+    *face = (voxel_face_type_mesh_t) {
         .num_vertices = num_vertices,
         .num_indices = num_indices,
         .vertices = vertices,
@@ -131,7 +131,7 @@ static result_t load_voxel_face_mesh(const cgltf_mesh* mesh_data, voxel_face_mes
     return result_success;
 }
 
-result_t load_gltf_voxel_face_meshes(const char* path, size_t num_faces, const char* face_names[], voxel_face_mesh_t faces[]) {
+result_t load_gltf_voxel_face_type_meshes(const char* path, size_t num_faces, const char* face_names[], voxel_face_type_mesh_t faces[]) {
     cgltf_options options = { 0 };
     cgltf_data* data = NULL;
 
@@ -152,7 +152,7 @@ result_t load_gltf_voxel_face_meshes(const char* path, size_t num_faces, const c
                 continue;
             }
 
-            if (load_voxel_face_mesh(node_data->mesh, &faces[j]) != result_success) {
+            if (load_voxel_face_type_mesh(node_data->mesh, &faces[j]) != result_success) {
                 return result_failure;
             }
             found = true;

@@ -310,7 +310,7 @@ const char* draw_color_pipeline(size_t frame_index, size_t image_index, VkComman
 
     vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(color_pipeline_push_constants), &color_pipeline_push_constants);
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
+    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
         const voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
         if (render_info->num_instances == 0) {
             continue;

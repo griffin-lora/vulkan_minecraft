@@ -1,6 +1,6 @@
 #pragma once
 
-#define NUM_CUBE_VOXEL_FACES 6
+#define NUM_CUBE_VOXEL_FACE_TYPES 6
 
 #define CUBE_VOXEL_UNION(TYPE)\
     struct {\
@@ -11,4 +11,4 @@
         TYPE right;\
         TYPE left;\
     };\
-    TYPE faces[NUM_CUBE_VOXEL_FACES];
+    TYPE faces[NUM_CUBE_VOXEL_FACE_TYPES];

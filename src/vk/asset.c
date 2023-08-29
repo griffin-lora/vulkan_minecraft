@@ -117,27 +117,27 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     } voxel_face_instances;
     voxel_face_instances.top = face_instances;
 
-    uint32_t num_vertices_array[NUM_CUBE_VOXEL_FACES];
+    uint32_t num_vertices_array[NUM_CUBE_VOXEL_FACE_TYPES];
 
-    staging_t vertex_stagings[NUM_CUBE_VOXEL_FACES];
-    staging_t index_stagings[NUM_CUBE_VOXEL_FACES];
-    staging_t instance_stagings[NUM_CUBE_VOXEL_FACES];
+    staging_t vertex_stagings[NUM_CUBE_VOXEL_FACE_TYPES];
+    staging_t index_stagings[NUM_CUBE_VOXEL_FACE_TYPES];
+    staging_t instance_stagings[NUM_CUBE_VOXEL_FACE_TYPES];
 
     uint32_t num_vertex_bytes = sizeof(voxel_vertex_t);
     uint32_t num_index_bytes = sizeof(uint16_t);
     uint32_t num_instance_bytes = sizeof(voxel_face_instance_t);
 
-    voxel_face_mesh_t cube_face_meshes[NUM_CUBE_VOXEL_FACES];
+    voxel_face_type_mesh_t cube_face_type_meshes[NUM_CUBE_VOXEL_FACE_TYPES];
 
-    if (load_gltf_voxel_face_meshes(mesh_paths[0], NUM_CUBE_VOXEL_FACES, (const char*[]) { "Front", "Back", "Top", "Bottom", "Right", "Left" }, cube_face_meshes) != result_success) {
+    if (load_gltf_voxel_face_type_meshes(mesh_paths[0], NUM_CUBE_VOXEL_FACE_TYPES, (const char*[]) { "Front", "Back", "Top", "Bottom", "Right", "Left" }, cube_face_type_meshes) != result_success) {
         return "Failed to load mesh\n";
     }
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
+    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
         // cube_voxel_render_info.faces[i].num_instances = NUM_ELEMS(face_instances);
         // voxel_face_instances.faces[i] = face_instances;
 
-        const voxel_face_mesh_t* mesh = &cube_face_meshes[i];
+        const voxel_face_type_mesh_t* mesh = &cube_face_type_meshes[i];
         voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
         voxel_face_allocation_info_t* allocation_info = &cube_voxel_allocation_info.faces[i];
 
@@ -188,7 +188,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     transfer_images(command_buffer, NUM_TEXTURE_IMAGES, image_create_infos, image_stagings, texture_images);
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
+    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
         const voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
 
         transfer_buffers(command_buffer, num_vertices_array[i], 1, &num_vertex_bytes, &vertex_stagings[i], &render_info->vertex_buffer);
@@ -215,7 +215,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     end_images(NUM_TEXTURE_IMAGES, image_stagings);
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
+    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
         end_buffers(1, &vertex_stagings[i]);
         end_buffers(1, &index_stagings[i]);
         if (cube_voxel_render_info.faces[i].num_instances != 0) {
@@ -258,7 +258,7 @@ void term_vulkan_assets(void) {
     vkDestroySampler(device, texture_image_sampler, NULL);
     destroy_images(NUM_TEXTURE_IMAGES, texture_images, texture_image_allocations, texture_image_views);
 
-    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
+    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACE_TYPES; i++) {
         const voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
         const voxel_face_allocation_info_t* allocation_info = &cube_voxel_allocation_info.faces[i];
 

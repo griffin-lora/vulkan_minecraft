@@ -50,6 +50,6 @@ typedef struct {
         uint16_t* indices;
         void* indices_data;
     };
-} voxel_face_mesh_t;
+} voxel_face_type_mesh_t;
 
-result_t load_gltf_voxel_face_meshes(const char* path, size_t num_faces, const char* face_names[], voxel_face_mesh_t faces[]);
+result_t load_gltf_voxel_face_type_meshes(const char* path, size_t num_faces, const char* face_names[], voxel_face_type_mesh_t faces[]);
