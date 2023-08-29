@@ -42,8 +42,7 @@ const VkPipelineDynamicStateCreateInfo default_dynamic_create_info = {
 };
 
 const VkBufferCreateInfo vertex_buffer_create_info = {
-    DEFAULT_VK_BUFFER,
-    .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+    DEFAULT_VK_VERTEX_BUFFER
 };
 
 const VkBufferCreateInfo index_buffer_create_info = {

@@ -17,3 +17,7 @@ inline uint32_t clamp_uint32(uint32_t value, uint32_t min, uint32_t max) {
 inline uint32_t max_uint32(uint32_t a, uint32_t b) {
     return a > b ? a : b;
 }
+
+inline uint32_t div_ceil_uint32(uint32_t a, uint32_t b) {
+    return (a + b - 1u) / b;
+}

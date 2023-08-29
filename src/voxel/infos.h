@@ -1,5 +1,6 @@
 #pragma once
 #include "vk.h"
+#include "vk/gfx_core.h"
 #include <vk_mem_alloc.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/vec3.h>
@@ -39,3 +40,7 @@ typedef struct {
 typedef struct {
     voxel_face_model_allocation_info_t face_model_infos[NUM_VOXEL_FACE_TYPES];
 } voxel_region_allocation_info_t;
+
+typedef struct {
+    staging_t face_model_stagings[NUM_VOXEL_FACE_TYPES];
+} voxel_region_staging_t;

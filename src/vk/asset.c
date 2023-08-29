@@ -6,6 +6,7 @@
 #include "color_pipeline.h"
 #include "defaults.h"
 #include "voxel/face_instance.h"
+#include "voxel/region.h"
 #include <malloc.h>
 #include <string.h>
 #include <stdalign.h>
@@ -100,28 +101,10 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         "mesh/cube_voxel.glb"
     };
 
-    voxel_face_instance_t face_instances[64];
-    {
-        size_t i = 0;
-        for (uint8_t x = 0; x < 8; x++) {
-            for (uint8_t y = 0; y < 8; y++, i++) {
-                face_instances[i] = (voxel_face_instance_t) {
-                    .position = { x, 0, y },
-                    .texture_array_index = i % 2
-                };
-            }
-        }
-    }
-
-    voxel_region_render_info.face_model_infos[2].num_instances = NUM_ELEMS(face_instances);
-    void* voxel_face_instance_arrays[NUM_VOXEL_FACE_TYPES];
-    voxel_face_instance_arrays[2] = face_instances;
-
     uint32_t num_vertices_array[NUM_VOXEL_FACE_TYPES];
 
     staging_t vertex_stagings[NUM_VOXEL_FACE_TYPES];
     staging_t index_stagings[NUM_VOXEL_FACE_TYPES];
-    staging_t instance_stagings[NUM_VOXEL_FACE_TYPES];
 
     uint32_t num_vertex_bytes = sizeof(voxel_vertex_t);
     uint32_t num_index_bytes = sizeof(uint16_t);
@@ -156,15 +139,33 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         free(mesh->indices_data);
     }
 
-    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
-        voxel_face_model_render_info_t* render_info = &voxel_region_render_info.face_model_infos[i];
-        voxel_face_model_allocation_info_t* allocation_info = &voxel_region_allocation_info.face_model_infos[i];
+    // voxel_face_instance_t face_instances[64];
+    // {
+    //     size_t i = 0;
+    //     for (uint8_t x = 0; x < 8; x++) {
+    //         for (uint8_t y = 0; y < 8; y++, i++) {
+    //             face_instances[i] = (voxel_face_instance_t) {
+    //                 .position = { x, 0, y },
+    //                 .texture_array_index = i % 2
+    //             };
+    //         }
+    //     }
+    // }
 
-        if (render_info->num_instances != 0) {
-            if (begin_buffers(render_info->num_instances, &vertex_buffer_create_info, 1, &voxel_face_instance_arrays[i], &num_instance_bytes, &instance_stagings[i], &render_info->instance_buffer, &allocation_info->instance_allocation) != result_success) {
-                return "Failed to begin creating instance buffer\n";
-            }
-        }
+    voxel_region_voxel_types_t* voxel_types = memalign(64, sizeof(voxel_region_voxel_types_t));
+    // TODO: Fill with data
+
+    //
+
+    voxel_face_instance_arrays_t face_instance_arrays = { 0 };
+    create_voxel_face_instance_arrays(voxel_types, &face_instance_arrays);
+
+    free(voxel_types);
+    
+    voxel_region_staging_t voxel_region_staging;
+    
+    if (begin_voxel_region_info(&face_instance_arrays, &voxel_region_staging, &voxel_region_render_info, &voxel_region_allocation_info) != result_success) {
+        return "Failed to begin creating voxel region info\n";
     }
 
     //
@@ -200,7 +201,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         transfer_buffers(command_buffer, num_vertices_array[i], 1, &num_vertex_bytes, &vertex_stagings[i], &type_render_info->vertex_buffer);
         transfer_buffers(command_buffer, type_render_info->num_indices, 1, &num_index_bytes, &index_stagings[i], &type_render_info->index_buffer);
         if (model_render_info->num_instances != 0) {
-            transfer_buffers(command_buffer, model_render_info->num_instances, 1, &num_instance_bytes, &instance_stagings[i], &model_render_info->instance_buffer);
+            transfer_buffers(command_buffer, model_render_info->num_instances, 1, &num_instance_bytes, &voxel_region_staging.face_model_stagings[i], &model_render_info->instance_buffer);
         }
     }
 
@@ -225,7 +226,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         end_buffers(1, &vertex_stagings[i]);
         end_buffers(1, &index_stagings[i]);
         if (voxel_region_render_info.face_model_infos[i].num_instances != 0) {
-            end_buffers(1, &instance_stagings[i]);
+            end_buffers(1, &voxel_region_staging.face_model_stagings[i]);
         }
     }
 
