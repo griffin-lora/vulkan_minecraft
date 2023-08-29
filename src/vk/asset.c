@@ -37,7 +37,11 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     } image_load_infos[][NUM_TEXTURE_LAYERS] = {
         {
             { "image/cube_voxel_0.png", STBI_rgb },
-            { "image/cube_voxel_1.png", STBI_rgb }
+            { "image/cube_voxel_1.png", STBI_rgb },
+            { "image/cube_voxel_2.png", STBI_rgb },
+            { "image/cube_voxel_3.png", STBI_rgb },
+            { "image/cube_voxel_4.png", STBI_rgb },
+            { "image/cube_voxel_5.png", STBI_rgb }
         }
     };
 
@@ -71,7 +75,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
             }
 
             if (j > 0 && ((uint32_t)new_width != width || (uint32_t)new_width != height)) {
-                return "Pixels \n";
+                return "Failed to get image in same size\n";
             }
 
             width = (uint32_t)new_width;
