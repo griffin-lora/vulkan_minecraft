@@ -45,6 +45,39 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_types_t* voxel_t
             voxel_face_instance_array_t* instance_array = &instance_arrays->arrays[i];
             current_voxel_face_instance_chunk_info_t* current_chunk_info = &current_chunk_infos[i];
 
+            switch (i) {
+                case CUBE_VOXEL_FACE_TYPE_FRONT:
+                    if (x + 1u < VOXEL_REGION_SIZE && voxel_types->types[x + 1][y][z] != voxel_type_air) {
+                        continue;
+                    }
+                    break;
+                case CUBE_VOXEL_FACE_TYPE_BACK:
+                    if (x - 1u < VOXEL_REGION_SIZE && voxel_types->types[x - 1][y][z] != voxel_type_air) {
+                        continue;
+                    }
+                    break;
+                case CUBE_VOXEL_FACE_TYPE_TOP:
+                    if (y + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y + 1][z] != voxel_type_air) {
+                        continue;
+                    }
+                    break;
+                case CUBE_VOXEL_FACE_TYPE_BOTTOM:
+                    if (y - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y - 1][z] != voxel_type_air) {
+                        continue;
+                    }
+                    break;
+                case CUBE_VOXEL_FACE_TYPE_RIGHT:
+                    if (z + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z + 1] != voxel_type_air) {
+                        continue;
+                    }
+                    break;
+                case CUBE_VOXEL_FACE_TYPE_LEFT:
+                    if (z - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z - 1] != voxel_type_air) {
+                        continue;
+                    }
+                    break;
+            }
+
             add_face_instance((voxel_face_instance_t) {
                 .position = { x, y, z },
                 .texture_array_index = 0

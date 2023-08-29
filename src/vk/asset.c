@@ -147,7 +147,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     for (size_t y = 0; y < VOXEL_REGION_SIZE; y++)
     for (size_t z = 0; z < VOXEL_REGION_SIZE; z++) {
         voxel_type_t* type = &voxel_types->types[x][y][z];
-        if (y == 2 || y == 3) {
+        if (y <= 5) {
             *type = voxel_type_grass;
         }
     }
