@@ -139,22 +139,18 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         free(mesh->indices_data);
     }
 
-    // voxel_face_instance_t face_instances[64];
-    // {
-    //     size_t i = 0;
-    //     for (uint8_t x = 0; x < 8; x++) {
-    //         for (uint8_t y = 0; y < 8; y++, i++) {
-    //             face_instances[i] = (voxel_face_instance_t) {
-    //                 .position = { x, 0, y },
-    //                 .texture_array_index = i % 2
-    //             };
-    //         }
-    //     }
-    // }
-
     voxel_region_voxel_types_t* voxel_types = memalign(64, sizeof(voxel_region_voxel_types_t));
-    // TODO: Fill with data
+    memset(voxel_types, voxel_type_air, sizeof(voxel_region_voxel_types_t));
 
+    //
+    for (size_t x = 0; x < VOXEL_REGION_SIZE; x++)
+    for (size_t y = 0; y < VOXEL_REGION_SIZE; y++)
+    for (size_t z = 0; z < VOXEL_REGION_SIZE; z++) {
+        voxel_type_t* type = &voxel_types->types[x][y][z];
+        if (y == 2 || y == 3) {
+            *type = voxel_type_grass;
+        }
+    }
     //
 
     voxel_face_instance_arrays_t face_instance_arrays = { 0 };

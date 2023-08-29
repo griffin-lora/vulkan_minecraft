@@ -8,6 +8,7 @@
 #define VOXEL_REGION_SIZE 32
 
 typedef struct {
+    // types[x][y][z]
     voxel_type_t types[VOXEL_REGION_SIZE][VOXEL_REGION_SIZE][VOXEL_REGION_SIZE];
 } voxel_region_voxel_types_t;
 

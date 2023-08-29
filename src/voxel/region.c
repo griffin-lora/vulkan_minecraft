@@ -1,29 +1,54 @@
 #include "region.h"
 #include "util.h"
+#include "cube.h"
 #include "vk/core.h"
 #include "vk/defaults.h"
 #include <malloc.h>
 #include <string.h>
 #include <vk_mem_alloc.h>
 
+typedef struct {
+    uint32_t num_instances;
+    voxel_face_instance_chunk_t* chunk;
+} current_voxel_face_instance_chunk_info_t;
+
+static void add_face_instance(voxel_face_instance_t instance, voxel_face_instance_array_t* instance_array, current_voxel_face_instance_chunk_info_t* current_chunk_info) {
+    if (instance_array->num_instances == 0) {
+        current_chunk_info->chunk = memalign(64, sizeof(voxel_face_instance_chunk_t));
+        instance_array->chunk = current_chunk_info->chunk;
+    }
+
+    if (current_chunk_info->num_instances >= NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS) {
+        voxel_face_instance_chunk_t* new_chunk = memalign(64, sizeof(voxel_face_instance_chunk_t));
+        current_chunk_info->chunk->next = new_chunk;
+        current_chunk_info->chunk = new_chunk;
+
+        current_chunk_info->num_instances = 0;
+    }
+
+    instance_array->num_instances++;
+    current_chunk_info->chunk->face_instances[current_chunk_info->num_instances++] = instance;
+}
+
 void create_voxel_face_instance_arrays(const voxel_region_voxel_types_t* voxel_types, voxel_face_instance_arrays_t* instance_arrays) {
-    // TODO: Actually create face instance arrays correctly
-    (void)voxel_types;
+    current_voxel_face_instance_chunk_info_t current_chunk_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
 
-    voxel_face_instance_array_t* instance_array = &instance_arrays->arrays[2];
-    instance_array->chunk = memalign(64, sizeof(voxel_face_instance_chunk_t));
-    instance_array->num_instances = 64;
+    for (uint8_t x = 0; x < VOXEL_REGION_SIZE; x++)
+    for (uint8_t y = 0; y < VOXEL_REGION_SIZE; y++)
+    for (uint8_t z = 0; z < VOXEL_REGION_SIZE; z++) {
+        voxel_type_t type = voxel_types->types[x][y][z];
+        if (type == voxel_type_air) {
+            continue;
+        }
 
-    voxel_face_instance_t* face_instances = instance_array->chunk->face_instances;
-    {
-        size_t i = 0;
-        for (uint8_t x = 0; x < 8; x++) {
-            for (uint8_t y = 0; y < 8; y++, i++) {
-                face_instances[i] = (voxel_face_instance_t) {
-                    .position = { x, 0, y },
-                    .texture_array_index = i % 2
-                };
-            }
+        for (size_t i = CUBE_VOXEL_TYPE_BEGIN; i < CUBE_VOXEL_TYPE_END; i++) {
+            voxel_face_instance_array_t* instance_array = &instance_arrays->arrays[i];
+            current_voxel_face_instance_chunk_info_t* current_chunk_info = &current_chunk_infos[i];
+
+            add_face_instance((voxel_face_instance_t) {
+                .position = { x, y, z },
+                .texture_array_index = 0
+            }, instance_array, current_chunk_info);
         }
     }
 }
