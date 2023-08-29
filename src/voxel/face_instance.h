@@ -9,4 +9,4 @@ typedef union {
         uint8_t y;
         uint8_t z;
     } position;
-} face_t;
+} voxel_face_instance_t;

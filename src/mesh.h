@@ -1,6 +1,7 @@
 #pragma once
 #include "result.h"
 #include "vk.h"
+#include <stddef.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/vec2.h>
 #include <cglm/struct/vec3.h>
@@ -32,3 +33,23 @@ typedef struct {
 } mesh_t;
 
 result_t load_gltf_mesh(const char* path, mesh_t* mesh);
+
+typedef struct {
+    vec3s position;
+    vec2s tex_coord;
+} voxel_vertex_t;
+
+typedef struct {
+    uint32_t num_vertices;
+    uint32_t num_indices;
+    union {
+        voxel_vertex_t* vertices;
+        void* vertices_data;
+    };
+    union {
+        uint16_t* indices;
+        void* indices_data;
+    };
+} voxel_face_mesh_t;
+
+result_t load_gltf_voxel_face_meshes(const char* path, size_t num_faces, const char* face_names[], voxel_face_mesh_t faces[]);

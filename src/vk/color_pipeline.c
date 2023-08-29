@@ -5,7 +5,7 @@
 #include "util.h"
 #include "mesh.h"
 #include "defaults.h"
-#include "voxel/face.h"
+#include "voxel/face_instance.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -238,7 +238,7 @@ const char* init_color_pipeline(void) {
             .pVertexBindingDescriptions = (VkVertexInputBindingDescription[2]) {
                 {
                     .binding = 0,
-                    .stride = sizeof(face_t),
+                    .stride = sizeof(voxel_face_instance_t),
                     .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
                 },
                 {
@@ -254,19 +254,19 @@ const char* init_color_pipeline(void) {
                     .binding = 0,
                     .location = 0,
                     .format = VK_FORMAT_R32_UINT,
-                    .offset = offsetof(face_t, info)
+                    .offset = offsetof(voxel_face_instance_t, info)
                 },
                 {
                     .binding = 1,
                     .location = 1,
                     .format = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset = offsetof(general_pipeline_vertex_t, position)
+                    .offset = offsetof(voxel_vertex_t, position)
                 },
                 {
                     .binding = 1,
                     .location = 2,
                     .format = VK_FORMAT_R32G32_SFLOAT,
-                    .offset = offsetof(general_pipeline_vertex_t, tex_coord)
+                    .offset = offsetof(voxel_vertex_t, tex_coord)
                 }
             }
         },
@@ -308,15 +308,20 @@ const char* draw_color_pipeline(size_t frame_index, size_t image_index, VkComman
         color_pipeline_render_pass, descriptor_set, pipeline_layout, pipeline
     );
 
-    for (size_t i = 0; i < NUM_MODELS; i++) {
-        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(color_pipeline_push_constants), &color_pipeline_push_constants);
+    vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(color_pipeline_push_constants), &color_pipeline_push_constants);
+
+    for (size_t i = 0; i < NUM_CUBE_VOXEL_FACES; i++) {
+        const voxel_face_render_info_t* render_info = &cube_voxel_render_info.faces[i];
+        if (render_info->num_instances == 0) {
+            continue;
+        }
 
         bind_vertex_buffers(command_buffer, 2, (VkBuffer[2]) {
-            instance_buffers[i],
-            vertex_buffer_arrays[i][GENERAL_PIPELINE_VERTEX_ARRAY_INDEX]
+            render_info->instance_buffer,
+            render_info->vertex_buffer
         });
-        vkCmdBindIndexBuffer(command_buffer, index_buffers[i], 0, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(command_buffer, num_indices_array[i], num_instances_array[i], 0, 0, 0);
+        vkCmdBindIndexBuffer(command_buffer, render_info->index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdDrawIndexed(command_buffer, render_info->num_indices, render_info->num_instances, 0, 0, 0);
     }
 
     end_pipeline(command_buffer);
