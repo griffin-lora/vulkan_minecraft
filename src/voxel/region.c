@@ -8,7 +8,7 @@
 #include <vk_mem_alloc.h>
 #include <stb_perlin.h>
 
-void create_voxel_region_voxel_types(size_t region_x, size_t region_y, size_t region_z, voxel_region_voxel_types_t* voxel_types) {
+void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size_t region_z, voxel_region_voxel_type_array_t* voxel_types) {
     float amplitude = 20.0f;
     float frequency = 0.01f;
     float lacunarity = 3.0f;
@@ -82,7 +82,9 @@ static void add_face_instance(voxel_face_instance_t instance, voxel_face_instanc
     current_chunk_info->chunk->face_instances[current_chunk_info->num_instances++] = instance;
 }
 
-void create_voxel_face_instance_arrays(const voxel_region_voxel_types_t* voxel_types, voxel_face_instance_arrays_t* instance_arrays) {
+void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* voxel_type_arrays, voxel_face_instance_arrays_t* instance_arrays) {
+    const voxel_region_voxel_type_array_t* voxel_types = voxel_type_arrays->center;
+
     current_voxel_face_instance_chunk_info_t current_chunk_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
 
     for (uint8_t x = 0; x < VOXEL_REGION_SIZE; x++)
@@ -102,9 +104,15 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_types_t* voxel_t
                     if (x + 1u < VOXEL_REGION_SIZE && voxel_types->types[x + 1][y][z] != voxel_type_air) {
                         continue;
                     }
+                    if (x + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->front->types != NULL && voxel_type_arrays->front->types[0][y][z] != voxel_type_air) {
+                        continue;
+                    }
                     break;
                 case CUBE_VOXEL_FACE_TYPE_BACK:
                     if (x - 1u < VOXEL_REGION_SIZE && voxel_types->types[x - 1][y][z] != voxel_type_air) {
+                        continue;
+                    }
+                    if (x - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->back->types != NULL && voxel_type_arrays->back->types[VOXEL_REGION_SIZE - 1][y][z] != voxel_type_air) {
                         continue;
                     }
                     break;
@@ -112,9 +120,15 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_types_t* voxel_t
                     if (y + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y + 1][z] != voxel_type_air) {
                         continue;
                     }
+                    if (y + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->top->types != NULL && voxel_type_arrays->top->types[x][0][z] != voxel_type_air) {
+                        continue;
+                    }
                     break;
                 case CUBE_VOXEL_FACE_TYPE_BOTTOM:
                     if (y - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y - 1][z] != voxel_type_air) {
+                        continue;
+                    }
+                    if (y - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->bottom->types != NULL && voxel_type_arrays->bottom->types[x][VOXEL_REGION_SIZE - 1][z] != voxel_type_air) {
                         continue;
                     }
                     break;
@@ -122,9 +136,15 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_types_t* voxel_t
                     if (z + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z + 1] != voxel_type_air) {
                         continue;
                     }
+                    if (z + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->right->types != NULL && voxel_type_arrays->right->types[x][y][0] != voxel_type_air) {
+                        continue;
+                    }
                     break;
                 case CUBE_VOXEL_FACE_TYPE_LEFT:
                     if (z - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z - 1] != voxel_type_air) {
+                        continue;
+                    }
+                    if (z - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->left->types != NULL && voxel_type_arrays->left->types[x][y][VOXEL_REGION_SIZE - 1] != voxel_type_air) {
                         continue;
                     }
                     break;

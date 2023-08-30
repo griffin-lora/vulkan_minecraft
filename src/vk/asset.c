@@ -145,8 +145,8 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     voxel_region_staging_t voxel_region_stagings[NUM_VOXEL_REGIONS];
 
-    voxel_region_voxel_types_t* voxel_type_arrays = memalign(64, NUM_VOXEL_REGIONS*sizeof(voxel_region_voxel_types_t));
-    memset(voxel_type_arrays, voxel_type_air, NUM_VOXEL_REGIONS*sizeof(voxel_region_voxel_types_t));
+    voxel_region_voxel_type_array_t (*voxel_type_arrays)[8] = memalign(64, 8*8*sizeof(voxel_region_voxel_type_array_t));
+    memset(voxel_type_arrays, voxel_type_air, 8*8*sizeof(voxel_region_voxel_type_array_t));
 
     {
         size_t i = 0;
@@ -156,12 +156,24 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
             render_info->position = (vec3s) {{ (float)(x * VOXEL_REGION_SIZE), 0.0f, (float)(z * VOXEL_REGION_SIZE) }};
 
-            voxel_region_voxel_types_t* voxel_types = &voxel_type_arrays[i];
+            voxel_region_voxel_type_array_t* voxel_types = &voxel_type_arrays[x][z];
 
-            create_voxel_region_voxel_types(x*VOXEL_REGION_SIZE, 0, z*VOXEL_REGION_SIZE, voxel_types);
+            create_voxel_region_voxel_type_array(x*VOXEL_REGION_SIZE, 0, z*VOXEL_REGION_SIZE, voxel_types);
+        }
+
+        i = 0;
+        for (size_t x = 0; x < 8; x++)
+        for (size_t z = 0; z < 8; z++, i++) {
+            voxel_region_render_info_t* render_info = &voxel_region_render_infos[i];
 
             voxel_face_instance_arrays_t face_instance_arrays = { 0 };
-            create_voxel_face_instance_arrays(voxel_types, &face_instance_arrays);
+            create_voxel_face_instance_arrays(&(voxel_region_voxel_type_arrays_t) {
+                .center = &voxel_type_arrays[x][z],
+                .front = x + 1u < 8 ? &voxel_type_arrays[x + 1][z] : NULL,
+                .back = x - 1u < 8 ? &voxel_type_arrays[x - 1][z] : NULL,
+                .right = z + 1u < 8 ? &voxel_type_arrays[x][z + 1] : NULL,
+                .left = z - 1u < 8 ? &voxel_type_arrays[x][z - 1] : NULL,
+            }, &face_instance_arrays);
             
             if (begin_voxel_region_info(&face_instance_arrays, &voxel_region_stagings[i], render_info, &voxel_region_allocation_infos[i]) != result_success) {
                 return "Failed to begin creating voxel region info\n";
