@@ -18,12 +18,6 @@
 #include <cglm/struct/mat3.h>
 #include <cglm/struct/affine.h>
 
-alignas(64) voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
-alignas(64) voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
-
-alignas(64) voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS] = { 0 };
-alignas(64) voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS] = { 0 };
-
 alignas(64)
 VkSampler voxel_texture_image_sampler;
 VkImage texture_images[NUM_TEXTURE_IMAGES];

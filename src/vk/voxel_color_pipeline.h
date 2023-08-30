@@ -2,12 +2,21 @@
 #include "vk.h"
 #include "core.h"
 #include "result.h"
+#include "voxel/infos.h"
 #include <vk_mem_alloc.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/mat4.h>
 #include <cglm/struct/vec2.h>
 #include <cglm/struct/vec3.h>
 #include <assert.h>
+
+extern voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL_FACE_TYPES];
+extern voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES];
+
+#define NUM_VOXEL_REGIONS 64
+
+extern voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS];
+extern voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS];
 
 typedef struct {
     mat4s view_projection;
