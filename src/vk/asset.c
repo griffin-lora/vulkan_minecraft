@@ -3,7 +3,7 @@
 #include "mesh.h"
 #include "core.h"
 #include "gfx_core.h"
-#include "color_pipeline.h"
+#include "voxel_color_pipeline.h"
 #include "defaults.h"
 #include "voxel/face_instance.h"
 #include "voxel/region.h"

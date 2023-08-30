@@ -2,7 +2,7 @@
 #include "util.h"
 #include "result.h"
 #include "gfx_pipeline.h"
-#include "color_pipeline.h"
+#include "voxel_color_pipeline.h"
 #include "asset.h"
 #include "gfx_core.h"
 #include "defaults.h"

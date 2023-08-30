@@ -1,4 +1,4 @@
-#include "color_pipeline.h"
+#include "voxel_color_pipeline.h"
 #include "core.h"
 #include "gfx_core.h"
 #include "asset.h"
@@ -22,9 +22,9 @@ static VkDescriptorSet descriptor_set;
 static VkPipelineLayout pipeline_layout;
 static VkPipeline pipeline;
 
-color_pipeline_push_constants_t color_pipeline_push_constants = { 0 };
+voxel_color_pipeline_push_constants_t voxel_color_pipeline_push_constants = { 0 };
 
-const char* init_color_pipeline(void) {
+const char* init_voxel_color_pipeline(void) {
     if (create_descriptor_set(
         &(VkDescriptorSetLayoutCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -60,7 +60,7 @@ const char* init_color_pipeline(void) {
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &(VkPushConstantRange) {
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .size = sizeof(color_pipeline_push_constants) + sizeof(vec4s)
+            .size = sizeof(voxel_color_pipeline_push_constants) + sizeof(vec4s)
         }
     }, NULL, &pipeline_layout) != VK_SUCCESS) {
         return "Failed to create pipeline layout\n";
@@ -69,12 +69,12 @@ const char* init_color_pipeline(void) {
     //
 
     VkShaderModule vertex_shader_module;
-    if (create_shader_module("shader/color_pipeline_vertex.spv", &vertex_shader_module) != result_success) {
+    if (create_shader_module("shader/voxel_color_pipeline_vertex.spv", &vertex_shader_module) != result_success) {
         return "Failed to create vertex shader module\n";
     }
 
     VkShaderModule fragment_shader_module;
-    if (create_shader_module("shader/color_pipeline_fragment.spv", &fragment_shader_module) != result_success) {
+    if (create_shader_module("shader/voxel_color_pipeline_fragment.spv", &fragment_shader_module) != result_success) {
         return "Failed to create fragment shader module\n";
     }
 
@@ -151,15 +151,15 @@ const char* init_color_pipeline(void) {
     return NULL;
 }
 
-void draw_color_pipeline(VkCommandBuffer command_buffer) {
+void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0, NULL);
-    vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(color_pipeline_push_constants), &color_pipeline_push_constants);
+    vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(voxel_color_pipeline_push_constants), &voxel_color_pipeline_push_constants);
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[i];
         vec4s position = {{ region_render_info->position.x, region_render_info->position.y, region_render_info->position.z, 0.0f }};
-        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(color_pipeline_push_constants), sizeof(vec4s), &position);
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(voxel_color_pipeline_push_constants), sizeof(vec4s), &position);
 
         for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
             const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[j];
@@ -179,7 +179,7 @@ void draw_color_pipeline(VkCommandBuffer command_buffer) {
     }
 }
 
-void term_color_pipeline(void) {
+void term_voxel_color_pipeline(void) {
     vkDestroyPipeline(device, pipeline, NULL);
     vkDestroyPipelineLayout(device, pipeline_layout, NULL);
     vkDestroyDescriptorPool(device, descriptor_pool, NULL);

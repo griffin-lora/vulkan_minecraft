@@ -1,7 +1,6 @@
 #include "render.h"
 #include "core.h"
 #include "gfx_pipeline.h"
-#include "color_pipeline.h"
 #include "gfx_core.h"
 #include "asset.h"
 #include "result.h"
@@ -210,7 +209,7 @@ const char* draw_vulkan_frame(void) {
         }
     }, VK_SUBPASS_CONTENTS_INLINE);
 
-    draw_color_pipeline(command_buffer);
+    draw_graphics_pipelines(command_buffer);
     
     vkCmdEndRenderPass(command_buffer);
 

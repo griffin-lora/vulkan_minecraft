@@ -1,6 +1,6 @@
 #include "input.h"
 #include "vk/core.h"
-#include "vk/color_pipeline.h"
+#include "vk/voxel_color_pipeline.h"
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/cam.h>
 #include <cglm/struct/vec2.h>
@@ -128,8 +128,8 @@ void handle_input(float) {
 
     mat4s view = glms_look(cam_pos, cam_forward, (vec3s) {{ 0.0f, -1.0f, 0.0f }});
     
-    color_pipeline_push_constants.view_projection = glms_mat4_mul(projection, view);
-    color_pipeline_push_constants.camera_position = cam_pos;
+    voxel_color_pipeline_push_constants.view_projection = glms_mat4_mul(projection, view);
+    voxel_color_pipeline_push_constants.camera_position = cam_pos;
 
     // printf("%ff, %ff, %ff, %ff, %ff, %ff, %ff, %ff\n", cam_pos.x, cam_pos.y, cam_pos.z, cam_forward.x, cam_forward.y, cam_forward.z, cam_rot.x, cam_rot.y);
 }
