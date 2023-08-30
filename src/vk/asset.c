@@ -95,22 +95,22 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         }
     }
 
-    const char* mesh_paths[] = {
+    const char* face_mesh_paths[] = {
         "mesh/cube_voxel.glb"
     };
 
-    uint32_t num_vertices_array[NUM_VOXEL_FACE_TYPES];
+    uint32_t num_face_vertices_array[NUM_VOXEL_FACE_TYPES];
 
-    staging_t vertex_stagings[NUM_VOXEL_FACE_TYPES];
-    staging_t index_stagings[NUM_VOXEL_FACE_TYPES];
+    staging_t face_vertex_stagings[NUM_VOXEL_FACE_TYPES];
+    staging_t face_index_stagings[NUM_VOXEL_FACE_TYPES];
 
-    uint32_t num_vertex_bytes = sizeof(voxel_face_vertex_t);
-    uint32_t num_index_bytes = sizeof(uint16_t);
-    uint32_t num_instance_bytes = sizeof(voxel_face_instance_t);
+    uint32_t face_num_vertex_bytes = sizeof(voxel_face_vertex_t);
+    uint32_t face_num_index_bytes = sizeof(uint16_t);
+    uint32_t face_num_instance_bytes = sizeof(voxel_face_instance_t);
 
     voxel_face_type_mesh_t cube_face_type_meshes[NUM_VOXEL_FACE_TYPES];
 
-    if (load_gltf_voxel_face_type_meshes(mesh_paths[0], NUM_VOXEL_FACE_TYPES, (const char*[]) { "Front", "Back", "Top", "Bottom", "Right", "Left" }, cube_face_type_meshes) != result_success) {
+    if (load_gltf_voxel_face_type_meshes(face_mesh_paths[0], NUM_VOXEL_FACE_TYPES, (const char*[]) { "Front", "Back", "Top", "Bottom", "Right", "Left" }, cube_face_type_meshes) != result_success) {
         return "Failed to load mesh\n";
     }
 
@@ -122,14 +122,14 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         voxel_face_type_render_info_t* render_info = &voxel_face_type_render_infos[i];
         voxel_face_type_allocation_info_t* allocation_info = &voxel_face_type_allocation_infos[i];
 
-        num_vertices_array[i] = mesh->num_vertices;
+        num_face_vertices_array[i] = mesh->num_vertices;
         render_info->num_indices = mesh->num_indices;
 
-        if (begin_buffers(mesh->num_vertices, &vertex_buffer_create_info, 1, &mesh->vertices_data, &num_vertex_bytes, &vertex_stagings[i], &render_info->vertex_buffer, &allocation_info->vertex_allocation) != result_success) {
+        if (begin_buffers(mesh->num_vertices, &vertex_buffer_create_info, 1, &mesh->vertices_data, &face_num_vertex_bytes, &face_vertex_stagings[i], &render_info->vertex_buffer, &allocation_info->vertex_allocation) != result_success) {
             return "Failed to begin creating vertex buffers\n"; 
         }
 
-        if (begin_buffers(mesh->num_indices, &index_buffer_create_info, 1, &mesh->indices_data, &num_index_bytes, &index_stagings[i], &render_info->index_buffer, &allocation_info->index_allocation) != result_success) {
+        if (begin_buffers(mesh->num_indices, &index_buffer_create_info, 1, &mesh->indices_data, &face_num_index_bytes, &face_index_stagings[i], &render_info->index_buffer, &allocation_info->index_allocation) != result_success) {
             return "Failed to begin creating index buffer\n";
         }
 
@@ -211,8 +211,8 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
         const voxel_face_type_render_info_t* render_info = &voxel_face_type_render_infos[i];
 
-        transfer_buffers(command_buffer, num_vertices_array[i], 1, &num_vertex_bytes, &vertex_stagings[i], &render_info->vertex_buffer);
-        transfer_buffers(command_buffer, render_info->num_indices, 1, &num_index_bytes, &index_stagings[i], &render_info->index_buffer);
+        transfer_buffers(command_buffer, num_face_vertices_array[i], 1, &face_num_vertex_bytes, &face_vertex_stagings[i], &render_info->vertex_buffer);
+        transfer_buffers(command_buffer, render_info->num_indices, 1, &face_num_index_bytes, &face_index_stagings[i], &render_info->index_buffer);
     }
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
@@ -223,7 +223,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
             const voxel_face_model_render_info_t* model_render_info = &render_info->face_model_infos[j];
 
             if (model_render_info->num_instances != 0) {
-                transfer_buffers(command_buffer, model_render_info->num_instances, 1, &num_instance_bytes, &staging->face_model_stagings[j], &model_render_info->instance_buffer);
+                transfer_buffers(command_buffer, model_render_info->num_instances, 1, &face_num_instance_bytes, &staging->face_model_stagings[j], &model_render_info->instance_buffer);
             }
         }
     }
@@ -246,8 +246,8 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     end_images(NUM_TEXTURE_IMAGES, image_stagings);
 
     for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
-        end_buffers(1, &vertex_stagings[i]);
-        end_buffers(1, &index_stagings[i]);
+        end_buffers(1, &face_vertex_stagings[i]);
+        end_buffers(1, &face_index_stagings[i]);
     }
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
