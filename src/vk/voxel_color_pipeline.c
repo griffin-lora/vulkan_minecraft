@@ -6,6 +6,7 @@
 #include "mesh.h"
 #include "defaults.h"
 #include "render.h"
+#include "gfx_pipeline.h"
 #include "voxel/face_instance.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
@@ -16,11 +17,7 @@
 #include <cglm/struct/affine.h>
 
 alignas(64)
-static VkDescriptorSetLayout descriptor_set_layout;
-static VkDescriptorPool descriptor_pool;
-static VkDescriptorSet descriptor_set;
-static VkPipelineLayout pipeline_layout;
-static VkPipeline pipeline;
+static graphics_pipeline_render_info_t pipeline_info;
 
 voxel_color_pipeline_push_constants_t voxel_color_pipeline_push_constants = { 0 };
 
@@ -49,20 +46,20 @@ const char* init_voxel_color_pipeline(void) {
                 }
             }
         },
-        &descriptor_set_layout, &descriptor_pool, &descriptor_set
+        &pipeline_info.descriptor_set_layout, &pipeline_info.descriptor_pool, &pipeline_info.descriptor_set
     ) != result_success) {
         return "Failed to create descriptor set\n";
     }
 
     if (vkCreatePipelineLayout(device, &(VkPipelineLayoutCreateInfo) {
         DEFAULT_VK_PIPELINE_LAYOUT,
-        .pSetLayouts = &descriptor_set_layout,
+        .pSetLayouts = &pipeline_info.descriptor_set_layout,
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &(VkPushConstantRange) {
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .size = sizeof(voxel_color_pipeline_push_constants) + sizeof(vec4s)
         }
-    }, NULL, &pipeline_layout) != VK_SUCCESS) {
+    }, NULL, &pipeline_info.pipeline_layout) != VK_SUCCESS) {
         return "Failed to create pipeline layout\n";
     }
 
@@ -139,9 +136,9 @@ const char* init_voxel_color_pipeline(void) {
             DEFAULT_VK_MULTISAMPLE,
             .rasterizationSamples = render_multisample_flags
         },
-        .layout = pipeline_layout,
+        .layout = pipeline_info.pipeline_layout,
         .renderPass = frame_render_pass
-    }, NULL, &pipeline) != VK_SUCCESS) {
+    }, NULL, &pipeline_info.pipeline) != VK_SUCCESS) {
         return "Failed to create graphics pipeline\n";
     }
 
@@ -152,14 +149,14 @@ const char* init_voxel_color_pipeline(void) {
 }
 
 void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0, NULL);
-    vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(voxel_color_pipeline_push_constants), &voxel_color_pipeline_push_constants);
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline_layout, 0, 1, &pipeline_info.descriptor_set, 0, NULL);
+    vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(voxel_color_pipeline_push_constants), &voxel_color_pipeline_push_constants);
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[i];
         vec4s position = {{ region_render_info->position.x, region_render_info->position.y, region_render_info->position.z, 0.0f }};
-        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(voxel_color_pipeline_push_constants), sizeof(vec4s), &position);
+        vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(voxel_color_pipeline_push_constants), sizeof(vec4s), &position);
 
         for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
             const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[j];
@@ -180,10 +177,10 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
 }
 
 void term_voxel_color_pipeline(void) {
-    vkDestroyPipeline(device, pipeline, NULL);
-    vkDestroyPipelineLayout(device, pipeline_layout, NULL);
-    vkDestroyDescriptorPool(device, descriptor_pool, NULL);
-    vkDestroyDescriptorSetLayout(device, descriptor_set_layout, NULL);
+    vkDestroyPipeline(device, pipeline_info.pipeline, NULL);
+    vkDestroyPipelineLayout(device, pipeline_info.pipeline_layout, NULL);
+    vkDestroyDescriptorPool(device, pipeline_info.descriptor_pool, NULL);
+    vkDestroyDescriptorSetLayout(device, pipeline_info.descriptor_set_layout, NULL);
 
     term_frame_swapchain_dependents();
 }
