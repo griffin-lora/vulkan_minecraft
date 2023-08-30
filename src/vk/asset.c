@@ -25,7 +25,7 @@ voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FAC
 voxel_region_render_info_t voxel_region_render_info;
 voxel_region_allocation_info_t voxel_region_allocation_info;
 
-VkSampler texture_image_sampler;
+VkSampler voxel_texture_image_sampler;
 VkImage texture_images[NUM_TEXTURE_IMAGES];
 VmaAllocation texture_image_allocations[NUM_TEXTURE_IMAGES];
 VkImageView texture_image_views[NUM_TEXTURE_IMAGES];
@@ -241,11 +241,13 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 
     if (vkCreateSampler(device, &(VkSamplerCreateInfo) {
         DEFAULT_VK_SAMPLER,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
         .minFilter = VK_FILTER_NEAREST,
         .magFilter = VK_FILTER_NEAREST,
         .anisotropyEnable = VK_FALSE,
         .maxLod = (float)image_create_infos[0].info.mipLevels
-    }, NULL, &texture_image_sampler) != VK_SUCCESS) {
+    }, NULL, &voxel_texture_image_sampler) != VK_SUCCESS) {
         return "Failed to create tetxure image sampler\n";
     }
 
@@ -253,7 +255,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
 }
 
 void term_vulkan_assets(void) {
-    vkDestroySampler(device, texture_image_sampler, NULL);
+    vkDestroySampler(device, voxel_texture_image_sampler, NULL);
     destroy_images(NUM_TEXTURE_IMAGES, texture_images, texture_image_allocations, texture_image_views);
 
     for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {

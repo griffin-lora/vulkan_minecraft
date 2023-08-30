@@ -181,7 +181,7 @@ const char* init_color_pipeline(void) {
                 .image = {
                     .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     .imageView = texture_image_views[0],
-                    .sampler = texture_image_sampler
+                    .sampler = voxel_texture_image_sampler
                 }
             }
         },
