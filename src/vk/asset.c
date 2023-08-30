@@ -18,13 +18,13 @@
 #include <cglm/struct/mat3.h>
 #include <cglm/struct/affine.h>
 
+alignas(64) voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
+alignas(64) voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
+
+alignas(64) voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS] = { 0 };
+alignas(64) voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS] = { 0 };
+
 alignas(64)
-voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
-voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
-
-voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS] = { 0 };
-voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS] = { 0 };
-
 VkSampler voxel_texture_image_sampler;
 VkImage texture_images[NUM_TEXTURE_IMAGES];
 VmaAllocation texture_image_allocations[NUM_TEXTURE_IMAGES];
@@ -143,24 +143,35 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
         free(mesh->indices_data);
     }
 
-    voxel_region_render_infos[0].position = (vec3s) {{ 30.0f, 0.0f, 0.0f }};
-
-    voxel_region_voxel_types_t* voxel_types = memalign(64, sizeof(voxel_region_voxel_types_t));
-    memset(voxel_types, voxel_type_air, sizeof(voxel_region_voxel_types_t));
-    
-    create_voxel_region_voxel_types(voxel_types);
-
-    voxel_face_instance_arrays_t face_instance_arrays = { 0 };
-    create_voxel_face_instance_arrays(voxel_types, &face_instance_arrays);
-
-    free(voxel_types);
-    
     voxel_region_staging_t voxel_region_stagings[NUM_VOXEL_REGIONS];
-    
-    if (begin_voxel_region_info(&face_instance_arrays, &voxel_region_stagings[0], &voxel_region_render_infos[0], &voxel_region_allocation_infos[0]) != result_success) {
-        return "Failed to begin creating voxel region info\n";
+
+    voxel_region_voxel_types_t* voxel_type_arrays = memalign(64, NUM_VOXEL_REGIONS*sizeof(voxel_region_voxel_types_t));
+    memset(voxel_type_arrays, voxel_type_air, NUM_VOXEL_REGIONS*sizeof(voxel_region_voxel_types_t));
+
+    {
+        size_t i = 0;
+        for (size_t x = 0; x < 8; x++)
+        for (size_t z = 0; z < 8; z++, i++) {
+            voxel_region_render_info_t* render_info = &voxel_region_render_infos[i];
+
+            render_info->position = (vec3s) {{ (float)(x * VOXEL_REGION_SIZE), 0.0f, (float)(z * VOXEL_REGION_SIZE) }};
+
+            voxel_region_voxel_types_t* voxel_types = &voxel_type_arrays[i];
+
+            create_voxel_region_voxel_types(x*VOXEL_REGION_SIZE, 0, z*VOXEL_REGION_SIZE, voxel_types);
+
+            voxel_face_instance_arrays_t face_instance_arrays = { 0 };
+            create_voxel_face_instance_arrays(voxel_types, &face_instance_arrays);
+            
+            if (begin_voxel_region_info(&face_instance_arrays, &voxel_region_stagings[i], render_info, &voxel_region_allocation_infos[i]) != result_success) {
+                return "Failed to begin creating voxel region info\n";
+            }
+
+        }
     }
 
+    free(voxel_type_arrays);
+    
     //
 
     VkFence transfer_fence;

@@ -9,7 +9,7 @@
 extern voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL_FACE_TYPES];
 extern voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES];
 
-#define NUM_VOXEL_REGIONS 32
+#define NUM_VOXEL_REGIONS 64
 
 extern voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS];
 extern voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS];
