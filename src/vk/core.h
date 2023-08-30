@@ -42,5 +42,5 @@ extern VkFormat depth_image_format;
 
 void reinit_swapchain(void);
 
-const char* init_vulkan_core(void);
-void term_vulkan_all(void);
+const char* init_core(void);
+void term_all(void);

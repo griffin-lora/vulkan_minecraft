@@ -30,7 +30,7 @@ VkImage texture_images[NUM_TEXTURE_IMAGES];
 VmaAllocation texture_image_allocations[NUM_TEXTURE_IMAGES];
 VkImageView texture_image_views[NUM_TEXTURE_IMAGES];
 
-const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device_properties) {
+const char* init_assets(const VkPhysicalDeviceProperties* physical_device_properties) {
     struct {
         const char* path;
         int channels;
@@ -297,7 +297,7 @@ const char* init_vulkan_assets(const VkPhysicalDeviceProperties* physical_device
     return NULL;
 }
 
-void term_vulkan_assets(void) {
+void term_assets(void) {
     vkDestroySampler(device, voxel_texture_image_sampler, NULL);
     destroy_images(NUM_TEXTURE_IMAGES, texture_images, texture_image_allocations, texture_image_views);
 

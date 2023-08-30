@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 int main(void) {
-    const char* msg = init_vulkan_core();
+    const char* msg = init_core();
     if (msg != NULL) {
         printf("%s", msg);
         return 1;
@@ -21,7 +21,7 @@ int main(void) {
 
         handle_input(delta);
 
-        msg = draw_vulkan_frame();
+        msg = draw_frame();
         if (msg != NULL) {
             printf("%s", msg);
             return 1;
@@ -40,7 +40,7 @@ int main(void) {
         }
     }
 
-    term_vulkan_all();
+    term_all();
 
     return 0;
 }

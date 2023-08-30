@@ -367,7 +367,7 @@ static VkSampleCountFlagBits get_max_multisample_flags(const VkPhysicalDevicePro
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-const char* init_vulkan_core(void) {
+const char* init_core(void) {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -516,13 +516,13 @@ const char* init_vulkan_core(void) {
         return "Failed to get a supported depth image format\n";
     }
     
-    const char* msg = init_vulkan_assets(&physical_device_properties);
+    const char* msg = init_assets(&physical_device_properties);
     if (msg != NULL) { return msg; }
 
     msg = init_frame_rendering();
     if (msg != NULL) { return msg; }
 
-    msg = init_vulkan_graphics_pipelines();
+    msg = init_graphics_pipelines();
     if (msg != NULL) { return msg; }
 
     vkGetSwapchainImagesKHR(device, swapchain, &num_swapchain_images, NULL);
@@ -537,12 +537,12 @@ const char* init_vulkan_core(void) {
     return NULL;
 }
 
-void term_vulkan_all(void) {
+void term_all(void) {
     vkDeviceWaitIdle(device);
 
     vkDestroyCommandPool(device, command_pool, NULL);
     
-    term_vulkan_graphics_pipelines();
+    term_graphics_pipelines();
     term_frame_rendering();
     
     term_swapchain();
@@ -553,7 +553,7 @@ void term_vulkan_all(void) {
         vkDestroyFence(device, in_flight_fences[i], NULL);
     }
 
-    term_vulkan_assets();
+    term_assets();
 
     vmaDestroyAllocator(allocator);
 

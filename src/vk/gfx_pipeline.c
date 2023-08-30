@@ -5,7 +5,7 @@
 #include "util.h"
 #include "asset.h"
 
-const char* init_vulkan_graphics_pipelines() {
+const char* init_graphics_pipelines() {
     const char* msg = init_voxel_color_pipeline();
     if (msg != NULL) {
         return msg;
@@ -18,6 +18,6 @@ void draw_graphics_pipelines(VkCommandBuffer command_buffer) {
     draw_voxel_color_pipeline(command_buffer);
 }
 
-void term_vulkan_graphics_pipelines() {
+void term_graphics_pipelines() {
     term_voxel_color_pipeline();
 }
