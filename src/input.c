@@ -9,16 +9,17 @@
 #include <cglm/struct/affine.h>
 #include <stdbool.h>
 #include <math.h>
+#include <stdio.h>
 
 #define M_TAU ((float)GLM_PI * 2.0f)
 
 #define MOVE_SPEED 0.3f
 #define ROT_SPEED 2.0f
 
-static vec3s cam_pos = {{ 37.433365f, 7.104989f, -26.219810f }};
+static vec3s cam_pos = {{ 15.462208f, 11.152647f, 15.079316f }};
 static vec3s cam_vel = {{ 0.0f, 0.0f, 0.0f }};
 
-static vec2s cam_rot = {{ -3.587656f, -0.225112f }};
+static vec2s cam_rot = {{ -4.730769f, -0.270427f }};
 static vec2s cam_rot_vel = {{ 0.0f, 0.0f }};
 
 static bool in_rotation_mode = false;

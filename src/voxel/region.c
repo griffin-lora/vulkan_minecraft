@@ -20,11 +20,43 @@ void create_voxel_region_voxel_types(voxel_region_voxel_types_t* voxel_types) {
         float height = amplitude * ((stb_perlin_fbm_noise3(x*frequency, 0.0f, z*frequency, lacunarity, gain, octaves) + 1.0f) / 2.0f);
         uint32_t world_height = (uint32_t)height;
         for (uint32_t y = 0; y < VOXEL_REGION_SIZE; y++) {
-            if (y <= world_height) {
-                voxel_types->types[x][y][z] = voxel_type_grass;
+            voxel_type_t* type = &voxel_types->types[x][y][z];
+
+            if (x == 15 && z == 15) {
+                *type = voxel_type_grass;
+                continue;
+            }
+
+            if (y == world_height) {
+                if (x == 15 && z >= 15) {
+                    *type = voxel_type_stone; // z axis
+                    continue;
+                }
+                if (z == 15 && x >= 15) {
+                    *type = voxel_type_dirt; // x axis
+                    continue;
+                }
+                *type = voxel_type_grass;
+                continue;
+            }
+            if (y < world_height) {
+                *type = voxel_type_dirt;
             }
         }
     }
+}
+
+static uint8_t get_texture_array_index(voxel_type_t voxel_type, size_t face_type) {
+    switch (voxel_type) {
+        case voxel_type_grass: switch (face_type) {
+            default: return 4;
+            case CUBE_VOXEL_FACE_TYPE_TOP: return 0;
+            case CUBE_VOXEL_FACE_TYPE_BOTTOM: return 2;
+        }
+        case voxel_type_stone: return 1;
+        case voxel_type_dirt: return 2;
+    }
+    return 0;
 }
 
 typedef struct {
@@ -100,7 +132,7 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_types_t* voxel_t
 
             add_face_instance((voxel_face_instance_t) {
                 .position = { x, y, z },
-                .texture_array_index = 0
+                .texture_array_index = get_texture_array_index(type, i)
             }, instance_array, current_chunk_info);
         }
     }
