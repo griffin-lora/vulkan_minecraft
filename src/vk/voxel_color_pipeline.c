@@ -110,7 +110,7 @@ const char* init_voxel_color_pipeline(void) {
                 },
                 {
                     .binding = 1,
-                    .stride = sizeof(voxel_vertex_t),
+                    .stride = sizeof(voxel_face_vertex_t),
                     .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
                 }
             },
@@ -127,13 +127,13 @@ const char* init_voxel_color_pipeline(void) {
                     .binding = 1,
                     .location = 1,
                     .format = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset = offsetof(voxel_vertex_t, position)
+                    .offset = offsetof(voxel_face_vertex_t, position)
                 },
                 {
                     .binding = 1,
                     .location = 2,
                     .format = VK_FORMAT_R32G32_SFLOAT,
-                    .offset = offsetof(voxel_vertex_t, tex_coord)
+                    .offset = offsetof(voxel_face_vertex_t, tex_coord)
                 }
             }
         },

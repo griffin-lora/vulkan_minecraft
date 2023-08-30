@@ -37,13 +37,13 @@ result_t load_gltf_mesh(const char* path, mesh_t* mesh);
 typedef struct {
     vec3s position;
     vec2s tex_coord;
-} voxel_vertex_t;
+} voxel_face_vertex_t;
 
 typedef struct {
     uint32_t num_vertices;
     uint32_t num_indices;
     union {
-        voxel_vertex_t* vertices;
+        voxel_face_vertex_t* vertices;
         void* vertices_data;
     };
     union {

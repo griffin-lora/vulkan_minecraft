@@ -103,13 +103,13 @@ static result_t load_voxel_face_type_mesh(const cgltf_mesh* mesh_data, voxel_fac
     }
 
     uint32_t num_vertices = (uint32_t)primitive_data->attributes[0].data->count;
-    voxel_vertex_t* vertices = memalign(64, num_vertices*sizeof(voxel_vertex_t));
+    voxel_face_vertex_t* vertices = memalign(64, num_vertices*sizeof(voxel_face_vertex_t));
 
     const vec3s* position_data = primitive_data->attributes[0].data->buffer_view->buffer->data + primitive_data->attributes[0].data->buffer_view->offset;
     const vec2s* tex_coord_data = primitive_data->attributes[1].data->buffer_view->buffer->data + primitive_data->attributes[1].data->buffer_view->offset;
 
     for (size_t i = 0; i < num_vertices; i++) {
-        vertices[i] = (voxel_vertex_t) {
+        vertices[i] = (voxel_face_vertex_t) {
             .position = position_data[i],
             .tex_coord = tex_coord_data[i]
         };

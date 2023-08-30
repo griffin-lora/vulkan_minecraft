@@ -104,7 +104,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     staging_t vertex_stagings[NUM_VOXEL_FACE_TYPES];
     staging_t index_stagings[NUM_VOXEL_FACE_TYPES];
 
-    uint32_t num_vertex_bytes = sizeof(voxel_vertex_t);
+    uint32_t num_vertex_bytes = sizeof(voxel_face_vertex_t);
     uint32_t num_index_bytes = sizeof(uint16_t);
     uint32_t num_instance_bytes = sizeof(voxel_face_instance_t);
 
