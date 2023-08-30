@@ -14,10 +14,12 @@ typedef struct {
 
 #define NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS 4096
 
-typedef struct voxel_face_instance_chunk {
+typedef struct voxel_face_instance_chunk voxel_face_instance_chunk_t;
+
+struct voxel_face_instance_chunk {
     voxel_face_instance_t face_instances[NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS];
-    struct voxel_face_instance_chunk* next;
-} voxel_face_instance_chunk_t;
+    voxel_face_instance_chunk_t* next;
+};
 
 typedef struct {
     uint32_t num_instances;
