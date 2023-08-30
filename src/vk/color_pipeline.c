@@ -5,6 +5,7 @@
 #include "util.h"
 #include "mesh.h"
 #include "defaults.h"
+#include "render.h"
 #include "voxel/face_instance.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
@@ -15,152 +16,15 @@
 #include <cglm/struct/affine.h>
 
 alignas(64)
-VkRenderPass color_pipeline_render_pass;
 static VkDescriptorSetLayout descriptor_set_layout;
 static VkDescriptorPool descriptor_pool;
 static VkDescriptorSet descriptor_set;
 static VkPipelineLayout pipeline_layout;
 static VkPipeline pipeline;
 
-static VkCommandBuffer color_command_buffers[NUM_FRAMES_IN_FLIGHT];
-
-static VkImage color_image;
-static VmaAllocation color_image_allocation;
-VkImageView color_image_view;
-
-static VkImage depth_image;
-static VmaAllocation depth_image_allocation;
-VkImageView depth_image_view;
-
 color_pipeline_push_constants_t color_pipeline_push_constants = { 0 };
 
-result_t init_color_pipeline_swapchain_dependents(void) {
-    if (vmaCreateImage(allocator, &(VkImageCreateInfo) {
-        DEFAULT_VK_IMAGE,
-        .extent.width = swap_image_extent.width,
-        .extent.height = swap_image_extent.height,
-        .format = surface_format.format,
-        .samples = render_multisample_flags,
-        .usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-    }, &device_allocation_create_info, &color_image, &color_image_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    if (vkCreateImageView(device, &(VkImageViewCreateInfo) {
-        DEFAULT_VK_IMAGE_VIEW,
-        .image = color_image,
-        .format = surface_format.format,
-        .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT
-    }, NULL, &color_image_view) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    if (vmaCreateImage(allocator, &(VkImageCreateInfo) {
-        DEFAULT_VK_IMAGE,
-        .extent.width = swap_image_extent.width,
-        .extent.height = swap_image_extent.height,
-        .format = depth_image_format,
-        .samples = render_multisample_flags,
-        .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
-    }, &device_allocation_create_info, &depth_image, &depth_image_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
-    }
-    
-    if (vkCreateImageView(device, &(VkImageViewCreateInfo) {
-        DEFAULT_VK_IMAGE_VIEW,
-        .image = depth_image,
-        .format = depth_image_format,
-        .subresourceRange.aspectMask = (depth_image_format == VK_FORMAT_D32_SFLOAT_S8_UINT || depth_image_format == VK_FORMAT_D24_UNORM_S8_UINT) ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_DEPTH_BIT
-    }, NULL, &depth_image_view) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    return result_success;
-}
-
-void term_color_pipeline_swapchain_dependents(void) {
-    vkDestroyImageView(device, color_image_view, NULL);
-    vmaDestroyImage(allocator, color_image, color_image_allocation);
-    vkDestroyImageView(device, depth_image_view, NULL);
-    vmaDestroyImage(allocator, depth_image, depth_image_allocation);
-}
-
 const char* init_color_pipeline(void) {
-    if (init_color_pipeline_swapchain_dependents() != result_success) {
-        return "Failed to create color pipeline images\n";
-    }
-
-    if (vkAllocateCommandBuffers(device, &(VkCommandBufferAllocateInfo) {
-        DEFAULT_VK_COMMAND_BUFFER,
-        .commandPool = command_pool,
-        .commandBufferCount = NUM_FRAMES_IN_FLIGHT
-    }, color_command_buffers) != VK_SUCCESS) {
-        return "Failed to allocate command buffers\n";
-    }
-
-    if (vkCreateRenderPass(device, &(VkRenderPassCreateInfo) {
-        DEFAULT_VK_RENDER_PASS,
-
-        .attachmentCount = 3,
-        .pAttachments = (VkAttachmentDescription[3]) {
-            {
-                DEFAULT_VK_ATTACHMENT,
-                .format = surface_format.format,
-                .samples = render_multisample_flags,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            },
-            {
-                DEFAULT_VK_ATTACHMENT,
-                .format = depth_image_format,
-                .samples = render_multisample_flags,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-                .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-                .finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-            },
-            {
-                DEFAULT_VK_ATTACHMENT,
-                .format = surface_format.format,
-                .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-                .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-                .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-            }
-        },
-
-        .pSubpasses = &(VkSubpassDescription) {
-            .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-
-            .colorAttachmentCount = 1,
-            .pColorAttachments = &(VkAttachmentReference) {
-                .attachment = 0,
-                .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            },
-
-            .pDepthStencilAttachment = &(VkAttachmentReference) {
-                .attachment = 1,
-                .layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-            },
-
-            .pResolveAttachments = &(VkAttachmentReference) {
-                .attachment = 2,
-                .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-            }
-        },
-
-        .dependencyCount = 1,
-        .pDependencies = &(VkSubpassDependency) {
-            .srcSubpass = VK_SUBPASS_EXTERNAL,
-            .dstSubpass = 0,
-            .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-            .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
-            .srcAccessMask = 0,
-            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
-        }
-    }, NULL, &color_pipeline_render_pass) != VK_SUCCESS) {
-        return "Failed to create render pass\n";
-    }
-
     if (create_descriptor_set(
         &(VkDescriptorSetLayoutCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
@@ -276,7 +140,7 @@ const char* init_color_pipeline(void) {
             .rasterizationSamples = render_multisample_flags
         },
         .layout = pipeline_layout,
-        .renderPass = color_pipeline_render_pass
+        .renderPass = frame_render_pass
     }, NULL, &pipeline) != VK_SUCCESS) {
         return "Failed to create graphics pipeline\n";
     }
@@ -287,27 +151,9 @@ const char* init_color_pipeline(void) {
     return NULL;
 }
 
-const char* draw_color_pipeline(size_t frame_index, size_t image_index, VkCommandBuffer* out_command_buffer) {
-    VkCommandBuffer command_buffer = color_command_buffers[frame_index];
-    *out_command_buffer = command_buffer;
-
-    vkResetCommandBuffer(command_buffer, 0);
-    if (vkBeginCommandBuffer(command_buffer, &(VkCommandBufferBeginInfo) {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-    }) != VK_SUCCESS) {
-        return "Failed to begin writing to command buffer\n";
-    }
-
-    begin_pipeline(
-        command_buffer,
-        swapchain_framebuffers[image_index], swap_image_extent,
-        2, (VkClearValue[2]) {
-            { .color = { .float32 = { 0.62f, 0.78f, 1.0f, 1.0f } } },
-            { .depthStencil = { .depth = 1.0f, .stencil = 0 } },
-        },
-        color_pipeline_render_pass, descriptor_set, pipeline_layout, pipeline
-    );
-
+void draw_color_pipeline(VkCommandBuffer command_buffer) {
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout, 0, 1, &descriptor_set, 0, NULL);
     vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(color_pipeline_push_constants), &color_pipeline_push_constants);
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
@@ -331,23 +177,13 @@ const char* draw_color_pipeline(size_t frame_index, size_t image_index, VkComman
             vkCmdDrawIndexed(command_buffer, type_render_info->num_indices, model_render_info->num_instances, 0, 0, 0);
         }
     }
-
-
-    end_pipeline(command_buffer);
-
-    if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
-        return "Failed to end command buffer\n";
-    }
-
-    return NULL;
 }
 
 void term_color_pipeline(void) {
     vkDestroyPipeline(device, pipeline, NULL);
     vkDestroyPipelineLayout(device, pipeline_layout, NULL);
-    vkDestroyRenderPass(device, color_pipeline_render_pass, NULL);
     vkDestroyDescriptorPool(device, descriptor_pool, NULL);
     vkDestroyDescriptorSetLayout(device, descriptor_set_layout, NULL);
 
-    term_color_pipeline_swapchain_dependents();
+    term_frame_swapchain_dependents();
 }

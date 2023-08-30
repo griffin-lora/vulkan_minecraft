@@ -6,6 +6,7 @@
 #include "asset.h"
 #include "gfx_core.h"
 #include "defaults.h"
+#include "render.h"
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
@@ -288,9 +289,9 @@ static result_t init_swapchain_framebuffers(void) {
     for (size_t i = 0; i < num_swapchain_images; i++) {
         if (vkCreateFramebuffer(device, &(VkFramebufferCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-            .renderPass = color_pipeline_render_pass,
+            .renderPass = frame_render_pass,
             .attachmentCount = 3,
-            .pAttachments = (VkImageView[3]) { color_image_view, depth_image_view, swapchain_image_views[i] },
+            .pAttachments = (VkImageView[3]) { frame_color_image_view, frame_depth_image_view, swapchain_image_views[i] },
             .width = swap_image_extent.width,
             .height = swap_image_extent.height,
             .layers = 1
@@ -322,10 +323,10 @@ void reinit_swapchain(void) {
     }
     //
     
-    term_color_pipeline_swapchain_dependents();
+    term_frame_swapchain_dependents();
     term_swapchain();
     init_swapchain();
-    init_color_pipeline_swapchain_dependents();
+    init_frame_swapchain_dependents();
     init_swapchain_framebuffers();
 }
 
@@ -518,6 +519,9 @@ const char* init_vulkan_core(void) {
     const char* msg = init_vulkan_assets(&physical_device_properties);
     if (msg != NULL) { return msg; }
 
+    msg = init_frame_rendering();
+    if (msg != NULL) { return msg; }
+
     msg = init_vulkan_graphics_pipelines();
     if (msg != NULL) { return msg; }
 
@@ -537,8 +541,9 @@ void term_vulkan_all(void) {
     vkDeviceWaitIdle(device);
 
     vkDestroyCommandPool(device, command_pool, NULL);
-
+    
     term_vulkan_graphics_pipelines();
+    term_frame_rendering();
     
     term_swapchain();
 
