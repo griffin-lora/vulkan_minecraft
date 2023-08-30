@@ -32,7 +32,7 @@ static VkImage depth_image;
 static VmaAllocation depth_image_allocation;
 VkImageView depth_image_view;
 
-color_pipeline_push_constants_t color_pipeline_push_constants;
+color_pipeline_push_constants_t color_pipeline_push_constants = { 0 };
 
 result_t init_color_pipeline_swapchain_dependents(void) {
     if (vmaCreateImage(allocator, &(VkImageCreateInfo) {
@@ -196,7 +196,7 @@ const char* init_color_pipeline(void) {
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &(VkPushConstantRange) {
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .size = sizeof(color_pipeline_push_constants)
+            .size = sizeof(color_pipeline_push_constants) + sizeof(vec4s)
         }
     }, NULL, &pipeline_layout) != VK_SUCCESS) {
         return "Failed to create pipeline layout\n";
@@ -310,21 +310,28 @@ const char* draw_color_pipeline(size_t frame_index, size_t image_index, VkComman
 
     vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(color_pipeline_push_constants), &color_pipeline_push_constants);
 
-    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
-        const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[i];
-        const voxel_face_model_render_info_t* model_render_info = &voxel_region_render_info.face_model_infos[i];
+    for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
+        const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[i];
+        vec4s position = {{ region_render_info->position.x, region_render_info->position.y, region_render_info->position.z, 0.0f }};
+        vkCmdPushConstants(command_buffer, pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(color_pipeline_push_constants), sizeof(vec4s), &position);
 
-        if (model_render_info->num_instances == 0) {
-            continue;
+        for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
+            const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[j];
+            const voxel_face_model_render_info_t* model_render_info = &region_render_info->face_model_infos[j];
+
+            if (model_render_info->num_instances == 0) {
+                continue;
+            }
+
+            bind_vertex_buffers(command_buffer, 2, (VkBuffer[2]) {
+                model_render_info->instance_buffer,
+                type_render_info->vertex_buffer
+            });
+            vkCmdBindIndexBuffer(command_buffer, type_render_info->index_buffer, 0, VK_INDEX_TYPE_UINT16);
+            vkCmdDrawIndexed(command_buffer, type_render_info->num_indices, model_render_info->num_instances, 0, 0, 0);
         }
-
-        bind_vertex_buffers(command_buffer, 2, (VkBuffer[2]) {
-            model_render_info->instance_buffer,
-            type_render_info->vertex_buffer
-        });
-        vkCmdBindIndexBuffer(command_buffer, type_render_info->index_buffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(command_buffer, type_render_info->num_indices, model_render_info->num_instances, 0, 0, 0);
     }
+
 
     end_pipeline(command_buffer);
 
