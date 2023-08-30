@@ -104,7 +104,7 @@ const char* init_voxel_color_pipeline(void) {
                 },
                 {
                     .binding = 1,
-                    .stride = num_vertex_bytes_array[GENERAL_PIPELINE_VERTEX_ARRAY_INDEX],
+                    .stride = sizeof(voxel_vertex_t),
                     .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
                 }
             },
@@ -181,6 +181,4 @@ void term_voxel_color_pipeline(void) {
     vkDestroyPipelineLayout(device, pipeline_info.pipeline_layout, NULL);
     vkDestroyDescriptorPool(device, pipeline_info.descriptor_pool, NULL);
     vkDestroyDescriptorSetLayout(device, pipeline_info.descriptor_set_layout, NULL);
-
-    term_frame_swapchain_dependents();
 }

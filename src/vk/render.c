@@ -259,4 +259,6 @@ const char* draw_frame(void) {
 
 void term_frame_rendering(void) {
     vkDestroyRenderPass(device, frame_render_pass, NULL);
+
+    term_frame_swapchain_dependents();
 }
