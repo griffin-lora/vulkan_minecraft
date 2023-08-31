@@ -118,6 +118,11 @@ extern const VmaAllocationCreateInfo device_allocation_create_info;
     .subresourceRange.baseArrayLayer = 0,\
     .subresourceRange.layerCount = 1
 
+#define DEFAULT_VK_BUFFER_MEMORY_BARRIER\
+    .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,\
+    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,\
+    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED
+
 #define DEFAULT_VK_IMAGE_BLIT\
     .srcOffsets[0] = { 0, 0, 0 },\
     .srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,\

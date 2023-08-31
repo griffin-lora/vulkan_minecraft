@@ -34,5 +34,6 @@ result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs
 result_t set_text_model_message(size_t index, const char* message);
 
 const char* init_text_pipeline(void);
+void transfer_text_pipeline(VkCommandBuffer command_buffer);
 void draw_text_pipeline(VkCommandBuffer command_buffer);
 void term_text_pipeline(void);

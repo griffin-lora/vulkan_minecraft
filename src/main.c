@@ -21,7 +21,7 @@ int main(void) {
 
         handle_input(delta);
 
-        msg = draw_frame();
+        msg = draw_frame(delta);
         if (msg != NULL) {
             printf("%s", msg);
             return 1;

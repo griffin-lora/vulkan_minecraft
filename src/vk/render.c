@@ -1,5 +1,6 @@
 #include "render.h"
 #include "core.h"
+#include "text_pipeline.h"
 #include "gfx_pipeline.h"
 #include "gfx_core.h"
 #include "asset.h"
@@ -7,6 +8,7 @@
 #include "util.h"
 #include "defaults.h"
 #include <string.h>
+#include <stdio.h>
 
 VkRenderPass frame_render_pass;
 static VkCommandBuffer frame_command_buffers[NUM_FRAMES_IN_FLIGHT];
@@ -151,7 +153,16 @@ const char* init_frame_rendering(void) {
     return NULL;
 }
 
-const char* draw_frame(void) {
+const char* draw_frame(float delta) {
+    {
+        char message[NUM_FPS_TEXT_MODEL_GLYPHS];
+        snprintf(message, NUM_FPS_TEXT_MODEL_GLYPHS, "FPS: %f", 1.0f/delta);
+
+        if (set_text_model_message(FPS_TEXT_MODEL_INDEX, message) != result_success) {
+            return "Failed to set text model message\n";
+        }
+    }
+
     VkSemaphore image_available_semaphore = image_available_semaphores[frame_index];
     VkSemaphore render_finished_semaphore = render_finished_semaphores[frame_index];
     VkFence in_flight_fence = in_flight_fences[frame_index];
@@ -179,6 +190,8 @@ const char* draw_frame(void) {
     }) != VK_SUCCESS) {
         return "Failed to begin writing to command buffer\n";
     }
+
+    transfer_graphics_pipelines(command_buffer);
 
     VkViewport viewport = {
         .x = 0.0f,

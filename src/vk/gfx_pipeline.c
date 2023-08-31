@@ -16,6 +16,10 @@ const char* init_graphics_pipelines() {
     return NULL;
 }
 
+void transfer_graphics_pipelines(VkCommandBuffer command_buffer) {
+    transfer_text_pipeline(command_buffer);
+}
+
 void draw_graphics_pipelines(VkCommandBuffer command_buffer) {
     draw_voxel_color_pipeline(command_buffer);
     draw_text_pipeline(command_buffer);

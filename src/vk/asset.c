@@ -25,6 +25,9 @@ VkImage texture_images[NUM_TEXTURE_IMAGES];
 VmaAllocation texture_image_allocations[NUM_TEXTURE_IMAGES];
 VkImageView texture_image_views[NUM_TEXTURE_IMAGES];
 
+uint32_t text_glyph_image_width;
+uint32_t text_glyph_image_height;
+
 const char* init_assets(const VkPhysicalDeviceProperties* physical_device_properties) {
     struct {
         const char* path;
@@ -37,6 +40,9 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
             { "image/cube_voxel_3.png", STBI_rgb },
             { "image/cube_voxel_4.png", STBI_rgb },
             { "image/cube_voxel_5.png", STBI_rgb }
+        },
+        {
+            { "image/font.png", STBI_rgb_alpha }
         }
     };
 
@@ -49,6 +55,14 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
                 DEFAULT_VK_SAMPLED_IMAGE,
                 .format = VK_FORMAT_R8G8B8_SRGB,
                 .arrayLayers = NUM_TEXTURE_LAYERS
+            }
+        },
+        {
+            .num_pixel_bytes = 4,
+            .info = {
+                DEFAULT_VK_SAMPLED_IMAGE,
+                .format = VK_FORMAT_R8G8B8A8_SRGB,
+                .arrayLayers = 1
             }
         }
     };
@@ -95,12 +109,15 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
             stbi_image_free(info->pixel_arrays[j]);
         }
     }
+
+    text_glyph_image_width = image_create_infos[1].info.extent.width;
+    text_glyph_image_height = image_create_infos[1].info.extent.height;
     
     text_glyph_vertex_t text_glyph_vertices[] = {
-        { {{ 0.0f, 0.0f }}, {{ 1.0f, 0.0f }} },
-        { {{ TEXT_GLYPH_SIZE*1.0f, 0.0f }}, {{ 0.0f, 0.0f }} },
-        { {{ TEXT_GLYPH_SIZE*1.0f, TEXT_GLYPH_SIZE*1.0f }}, {{ 0.0f, 1.0f }} },
-        { {{ 0.0f, TEXT_GLYPH_SIZE*1.0f }}, {{ 1.0f, 1.0f }} }
+        { {{ 0.0f, 0.0f }}, {{ 0.0f, 0.0f }} },
+        { {{ 1.0f/(float)TEXT_GLYPH_SIZE, 0.0f }}, {{ (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_width, 0.0f }} },
+        { {{ 1.0f/(float)TEXT_GLYPH_SIZE, 1.0f/(float)TEXT_GLYPH_SIZE }}, {{ (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_width, (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_height }} },
+        { {{ 0.0f, 1.0f/(float)TEXT_GLYPH_SIZE }}, {{ 0.0f, (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_height }} }
     };
     
     uint16_t text_glyph_indices[] = {
@@ -165,10 +182,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         return "Failed to begin creating index buffer\n";
     }
 
-    if (
-        init_text_model(FPS_TEXT_MODEL_INDEX, (vec2s) {{ 0.0f, 0.0f }}, NUM_FPS_TEXT_MODEL_GLYPHS) != result_success ||
-        set_text_model_message(FPS_TEXT_MODEL_INDEX, "Hello world!")
-    ) {
+    if (init_text_model(FPS_TEXT_MODEL_INDEX, (vec2s) {{ 0.0f, 0.0f }}, NUM_FPS_TEXT_MODEL_GLYPHS) != result_success) {
         return "Failed to create text model\n";
     }
 

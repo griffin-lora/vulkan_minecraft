@@ -7,6 +7,7 @@
 #include "render.h"
 #include <stdalign.h>
 #include <string.h>
+#include <stdio.h>
 
 typedef struct {
     vec2s model_position;
@@ -32,7 +33,7 @@ alignas(64) static VmaAllocation text_model_staging_allocations[NUM_TEXT_MODELS]
 
 alignas(64)
 static size_t num_text_model_staging_updates = 0;
-static size_t text_model_staging_updates[NUM_TEXT_MODELS] = { 0 };
+static VkBuffer text_model_staging_updates[NUM_TEXT_MODELS] = { 0 };
 
 result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs) {
     if (index >= NUM_TEXT_MODELS) {
@@ -72,9 +73,15 @@ result_t set_text_model_message(size_t index, const char* message) {
 
     text_glyph_instance_t instances[num_glyphs];
     for (uint32_t i = 0; i < num_glyphs; i++) {
+        int32_t glyph_char = message[i];
+        
+        vec2s glyph_tex_coord = {{ (float)(glyph_char*TEXT_GLYPH_SIZE % (int32_t)text_glyph_image_width), (float)(TEXT_GLYPH_SIZE*(glyph_char*TEXT_GLYPH_SIZE / (int32_t)text_glyph_image_width)) }};
+        glyph_tex_coord.x /= (float)text_glyph_image_width;
+        glyph_tex_coord.y /= (float)text_glyph_image_height;
+
         instances[i] = (text_glyph_instance_t) {
-            .position = {{ (float)i * TEXT_GLYPH_SIZE, 0.0f }},
-            .tex_coord = {{ 0.0f, 0.0f }},
+            .position = {{ (float)i/(float)TEXT_GLYPH_SIZE, 0.0f }},
+            .tex_coord = {{ glyph_tex_coord.x, glyph_tex_coord.y }},
         };
     }
 
@@ -82,7 +89,8 @@ result_t set_text_model_message(size_t index, const char* message) {
         return result_failure;
     }
 
-    text_model_staging_updates[num_text_model_staging_updates++] = index;
+    text_model_render_infos[index].num_instances = num_glyphs;
+    text_model_staging_updates[num_text_model_staging_updates++] = text_model_staging_buffers[index];
     
     return result_success;
 }
@@ -107,7 +115,7 @@ const char* init_text_pipeline(void) {
                 .type = descriptor_info_type_image,
                 .image = {
                     .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                    .imageView = texture_image_views[0],
+                    .imageView = texture_image_views[1],
                     .sampler = voxel_texture_image_sampler
                 }
             }
@@ -175,23 +183,29 @@ const char* init_text_pipeline(void) {
                 }
             },
 
-            .vertexAttributeDescriptionCount = 3,
-            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[3]) {
+            .vertexAttributeDescriptionCount = 4,
+            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[4]) {
                 {
                     .binding = 0,
                     .location = 0,
+                    .format = VK_FORMAT_R32G32_SFLOAT,
+                    .offset = offsetof(text_glyph_instance_t, position)
+                },
+                {
+                    .binding = 0,
+                    .location = 1,
                     .format = VK_FORMAT_R32G32_SFLOAT,
                     .offset = offsetof(text_glyph_instance_t, tex_coord)
                 },
                 {
                     .binding = 1,
-                    .location = 1,
+                    .location = 2,
                     .format = VK_FORMAT_R32G32_SFLOAT,
                     .offset = offsetof(text_glyph_vertex_t, position)
                 },
                 {
                     .binding = 1,
-                    .location = 2,
+                    .location = 3,
                     .format = VK_FORMAT_R32G32_SFLOAT,
                     .offset = offsetof(text_glyph_vertex_t, tex_coord)
                 }
@@ -212,6 +226,27 @@ const char* init_text_pipeline(void) {
     vkDestroyShaderModule(device, fragment_shader_module, NULL);
 
     return NULL;
+}
+
+void transfer_text_pipeline(VkCommandBuffer command_buffer) {
+    for (size_t i = 0; i < num_text_model_staging_updates; i++) {
+        const text_model_render_info_t* render_info = &text_model_render_infos[i];
+        VkDeviceSize num_bytes = render_info->num_instances * sizeof(text_glyph_instance_t);
+        
+        vkCmdCopyBuffer(command_buffer, text_model_staging_updates[i], render_info->instance_buffer, 1, &(VkBufferCopy) {
+            .size = num_bytes
+        });
+
+        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &(VkBufferMemoryBarrier) {
+            DEFAULT_VK_BUFFER_MEMORY_BARRIER,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+            .buffer = render_info->instance_buffer,
+            .size = num_bytes
+        }, 0, NULL);
+    }
+
+    num_text_model_staging_updates = 0;
 }
 
 void draw_text_pipeline(VkCommandBuffer command_buffer) {
