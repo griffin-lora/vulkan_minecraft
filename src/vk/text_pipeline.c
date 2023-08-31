@@ -6,14 +6,86 @@
 #include "gfx_pipeline.h"
 #include "render.h"
 #include <stdalign.h>
+#include <string.h>
+
+typedef struct {
+    vec2s model_position;
+    VkBuffer instance_buffer;
+    uint32_t num_instances;
+} text_model_render_info_t;
+
+typedef struct {
+    VmaAllocation instance_allocation;
+} text_model_allocation_info_t;
 
 alignas(64)
 static graphics_pipeline_render_info_t pipeline_info;
 text_glyph_render_info_t text_glyph_render_info = { 0 };
 text_glyph_allocation_info_t text_glyph_allocation_info = { 0 };
 
-alignas(64) text_model_render_info_t text_model_render_infos[NUM_TEXT_MODELS] = { 0 };
-alignas(64) text_model_allocation_info_t text_model_allocation_infos[NUM_TEXT_MODELS] = { 0 };
+#define NUM_TEXT_MODELS 1
+
+alignas(64) static text_model_render_info_t text_model_render_infos[NUM_TEXT_MODELS] = { 0 };
+alignas(64) static text_model_allocation_info_t text_model_allocation_infos[NUM_TEXT_MODELS] = { 0 };
+alignas(64) static VkBuffer text_model_staging_buffers[NUM_TEXT_MODELS] = { 0 };
+alignas(64) static VmaAllocation text_model_staging_allocations[NUM_TEXT_MODELS] = { 0 };
+
+alignas(64)
+static size_t num_text_model_staging_updates = 0;
+static size_t text_model_staging_updates[NUM_TEXT_MODELS] = { 0 };
+
+result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs) {
+    if (index >= NUM_TEXT_MODELS) {
+        return result_failure;
+    }
+
+    text_model_render_info_t* render_info = &text_model_render_infos[index];
+    text_model_allocation_info_t* allocation_info = &text_model_allocation_infos[index];
+    VkBuffer* staging_buffer = &text_model_staging_buffers[index];
+    VmaAllocation* staging_allocation = &text_model_staging_allocations[index];
+
+    render_info->model_position = model_position;
+
+    if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
+        DEFAULT_VK_STAGING_BUFFER,
+        .size = num_glyphs*sizeof(text_glyph_instance_t)
+    }, &staging_allocation_create_info, staging_buffer, staging_allocation, NULL) != VK_SUCCESS) {
+        return result_failure;
+    }
+
+    if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
+        DEFAULT_VK_VERTEX_BUFFER,
+        .size = num_glyphs*sizeof(text_glyph_instance_t)
+    }, &device_allocation_create_info, &render_info->instance_buffer, &allocation_info->instance_allocation, NULL) != VK_SUCCESS) {
+        return result_failure;
+    }
+
+    return result_success;
+}
+
+result_t set_text_model_message(size_t index, const char* message) {
+    if (index >= NUM_TEXT_MODELS || num_text_model_staging_updates >= NUM_TEXT_MODELS) {
+        return result_failure;
+    }
+
+    uint32_t num_glyphs = (uint32_t)strlen(message);
+
+    text_glyph_instance_t instances[num_glyphs];
+    for (uint32_t i = 0; i < num_glyphs; i++) {
+        instances[i] = (text_glyph_instance_t) {
+            .position = {{ (float)i * TEXT_GLYPH_SIZE, 0.0f }},
+            .tex_coord = {{ 0.0f, 0.0f }},
+        };
+    }
+
+    if (write_to_buffer(text_model_staging_allocations[index], sizeof(instances), instances) != result_success) {
+        return result_failure;
+    }
+
+    text_model_staging_updates[num_text_model_staging_updates++] = index;
+    
+    return result_success;
+}
 
 const char* init_text_pipeline(void) {
     if (create_descriptor_set(
@@ -166,6 +238,13 @@ void draw_text_pipeline(VkCommandBuffer command_buffer) {
 }
 
 void term_text_pipeline(void) {
+    for (size_t i = 0; i < NUM_TEXT_MODELS; i++) {
+        if (text_model_render_infos[i].instance_buffer != VK_NULL_HANDLE) {
+            vmaDestroyBuffer(allocator, text_model_render_infos[i].instance_buffer, text_model_allocation_infos[i].instance_allocation);
+            vmaDestroyBuffer(allocator, text_model_staging_buffers[i], text_model_staging_allocations[i]);
+        }
+    }
+
     vkDestroyPipeline(device, pipeline_info.pipeline, NULL);
     vkDestroyPipelineLayout(device, pipeline_info.pipeline_layout, NULL);
     vkDestroyDescriptorPool(device, pipeline_info.descriptor_pool, NULL);

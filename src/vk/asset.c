@@ -98,9 +98,9 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     
     text_glyph_vertex_t text_glyph_vertices[] = {
         { {{ 0.0f, 0.0f }}, {{ 1.0f, 0.0f }} },
-        { {{ 1.0f, 0.0f }}, {{ 0.0f, 0.0f }} },
-        { {{ 1.0f, 1.0f }}, {{ 0.0f, 1.0f }} },
-        { {{ 0.0f, 1.0f }}, {{ 1.0f, 1.0f }} }
+        { {{ TEXT_GLYPH_SIZE*1.0f, 0.0f }}, {{ 0.0f, 0.0f }} },
+        { {{ TEXT_GLYPH_SIZE*1.0f, TEXT_GLYPH_SIZE*1.0f }}, {{ 0.0f, 1.0f }} },
+        { {{ 0.0f, TEXT_GLYPH_SIZE*1.0f }}, {{ 1.0f, 1.0f }} }
     };
     
     uint16_t text_glyph_indices[] = {
@@ -163,6 +163,13 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
 
     if (begin_buffer(&index_buffer_create_info, num_text_glyph_indices, num_text_glyph_index_bytes, text_glyph_indices, &text_glyph_index_staging, &text_glyph_render_info.index_buffer, &text_glyph_allocation_info.index_allocation) != result_success) {
         return "Failed to begin creating index buffer\n";
+    }
+
+    if (
+        init_text_model(FPS_TEXT_MODEL_INDEX, (vec2s) {{ 0.0f, 0.0f }}, NUM_FPS_TEXT_MODEL_GLYPHS) != result_success ||
+        set_text_model_message(FPS_TEXT_MODEL_INDEX, "Hello world!")
+    ) {
+        return "Failed to create text model\n";
     }
 
     voxel_region_staging_t voxel_region_stagings[NUM_VOXEL_REGIONS];
