@@ -26,10 +26,7 @@ typedef struct {
     uint32_t num_vertices;
     uint32_t num_indices;
     vertex_array_t vertex_arrays[NUM_VERTEX_ARRAYS];
-    union {
-        uint16_t* indices;
-        void* indices_data;
-    };
+    uint16_t* indices;
 } mesh_t;
 
 result_t load_gltf_mesh(const char* path, mesh_t* mesh);
@@ -42,14 +39,8 @@ typedef struct {
 typedef struct {
     uint32_t num_vertices;
     uint32_t num_indices;
-    union {
-        voxel_face_vertex_t* vertices;
-        void* vertices_data;
-    };
-    union {
-        uint16_t* indices;
-        void* indices_data;
-    };
+    voxel_face_vertex_t* vertices;
+    uint16_t* indices;
 } voxel_face_type_mesh_t;
 
 result_t load_gltf_voxel_face_type_meshes(const char* path, size_t num_faces, const char* face_names[], voxel_face_type_mesh_t faces[]);

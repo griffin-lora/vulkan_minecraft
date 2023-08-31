@@ -24,15 +24,11 @@ result_t begin_images(size_t num_images, const image_create_info_t infos[], stag
 void transfer_images(VkCommandBuffer command_buffer, size_t num_images, const image_create_info_t infos[], const staging_t stagings[], const VkImage images[]);
 void end_images(size_t num_images, const staging_t stagings[]);
 
-result_t begin_buffers(
-    VkDeviceSize num_elements, const VkBufferCreateInfo* base_device_buffer_create_info,
-    size_t num_buffers, void* const arrays[], const uint32_t num_element_bytes_array[], staging_t stagings[], VkBuffer buffers[], VmaAllocation allocations[]
+result_t begin_buffer(
+    const VkBufferCreateInfo* base_device_buffer_create_info,
+    VkDeviceSize num_elements, uint32_t num_element_bytes, const void* array,
+    staging_t* staging, VkBuffer* buffer, VmaAllocation* allocation
 );
-void transfer_buffers(
-    VkCommandBuffer command_buffer, VkDeviceSize num_elements,
-    size_t num_buffers, const uint32_t num_element_bytes_array[], const staging_t stagings[], const VkBuffer buffers[]
-);
-void end_buffers(size_t num_buffers, const staging_t stagings[]);
 
 typedef struct {
     enum {

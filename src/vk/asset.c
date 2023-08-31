@@ -4,6 +4,7 @@
 #include "core.h"
 #include "gfx_core.h"
 #include "voxel_color_pipeline.h"
+#include "text_pipeline.h"
 #include "defaults.h"
 #include "voxel/face_instance.h"
 #include "voxel/region.h"
@@ -94,6 +95,28 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
             stbi_image_free(info->pixel_arrays[j]);
         }
     }
+    
+    text_glyph_vertex_t text_glyph_vertices[] = {
+        { {{ 0.0f, 0.0f }}, {{ 1.0f, 0.0f }} },
+        { {{ 1.0f, 0.0f }}, {{ 0.0f, 0.0f }} },
+        { {{ 1.0f, 1.0f }}, {{ 0.0f, 1.0f }} },
+        { {{ 0.0f, 1.0f }}, {{ 1.0f, 1.0f }} }
+    };
+    
+    uint16_t text_glyph_indices[] = {
+        0, 1, 2, 2, 3, 0
+    };
+    
+    uint32_t num_text_glyph_vertices = NUM_ELEMS(text_glyph_vertices);
+    uint32_t num_text_glyph_indices = NUM_ELEMS(text_glyph_indices);
+
+    text_glyph_render_info.num_indices = num_text_glyph_indices;
+
+    staging_t text_glyph_vertex_staging;
+    staging_t text_glyph_index_staging;
+
+    uint32_t num_text_glyph_vertex_bytes = sizeof(text_glyph_vertex_t);
+    uint32_t num_text_glyph_index_bytes = sizeof(uint16_t);
 
     const char* face_mesh_paths[] = {
         "mesh/cube_voxel.glb"
@@ -104,9 +127,9 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     staging_t face_vertex_stagings[NUM_VOXEL_FACE_TYPES];
     staging_t face_index_stagings[NUM_VOXEL_FACE_TYPES];
 
-    uint32_t face_num_vertex_bytes = sizeof(voxel_face_vertex_t);
-    uint32_t face_num_index_bytes = sizeof(uint16_t);
-    uint32_t face_num_instance_bytes = sizeof(voxel_face_instance_t);
+    uint32_t num_face_vertex_bytes = sizeof(voxel_face_vertex_t);
+    uint32_t num_face_index_bytes = sizeof(uint16_t);
+    uint32_t num_face_instance_bytes = sizeof(voxel_face_instance_t);
 
     voxel_face_type_mesh_t cube_face_type_meshes[NUM_VOXEL_FACE_TYPES];
 
@@ -115,9 +138,6 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     }
 
     for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
-        // cube_voxel_render_info.faces[i].num_instances = NUM_ELEMS(face_instances);
-        // voxel_face_instances.faces[i] = face_instances;
-
         const voxel_face_type_mesh_t* mesh = &cube_face_type_meshes[i];
         voxel_face_type_render_info_t* render_info = &voxel_face_type_render_infos[i];
         voxel_face_type_allocation_info_t* allocation_info = &voxel_face_type_allocation_infos[i];
@@ -125,16 +145,24 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         num_face_vertices_array[i] = mesh->num_vertices;
         render_info->num_indices = mesh->num_indices;
 
-        if (begin_buffers(mesh->num_vertices, &vertex_buffer_create_info, 1, &mesh->vertices_data, &face_num_vertex_bytes, &face_vertex_stagings[i], &render_info->vertex_buffer, &allocation_info->vertex_allocation) != result_success) {
+        if (begin_buffer(&vertex_buffer_create_info, mesh->num_vertices, num_face_vertex_bytes, mesh->vertices, &face_vertex_stagings[i], &render_info->vertex_buffer, &allocation_info->vertex_allocation) != result_success) {
             return "Failed to begin creating vertex buffers\n"; 
         }
 
-        if (begin_buffers(mesh->num_indices, &index_buffer_create_info, 1, &mesh->indices_data, &face_num_index_bytes, &face_index_stagings[i], &render_info->index_buffer, &allocation_info->index_allocation) != result_success) {
+        if (begin_buffer(&index_buffer_create_info, mesh->num_indices, num_face_index_bytes, mesh->indices, &face_index_stagings[i], &render_info->index_buffer, &allocation_info->index_allocation) != result_success) {
             return "Failed to begin creating index buffer\n";
         }
 
-        free(mesh->vertices_data);
-        free(mesh->indices_data);
+        free(mesh->vertices);
+        free(mesh->indices);
+    }
+
+    if (begin_buffer(&vertex_buffer_create_info, num_text_glyph_vertices, num_text_glyph_vertex_bytes, text_glyph_vertices, &text_glyph_vertex_staging, &text_glyph_render_info.vertex_buffer, &text_glyph_allocation_info.vertex_allocation) != result_success) {
+        return "Failed to begin creating vertex buffer\n";
+    }
+
+    if (begin_buffer(&index_buffer_create_info, num_text_glyph_indices, num_text_glyph_index_bytes, text_glyph_indices, &text_glyph_index_staging, &text_glyph_render_info.index_buffer, &text_glyph_allocation_info.index_allocation) != result_success) {
+        return "Failed to begin creating index buffer\n";
     }
 
     voxel_region_staging_t voxel_region_stagings[NUM_VOXEL_REGIONS];
@@ -211,8 +239,12 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
         const voxel_face_type_render_info_t* render_info = &voxel_face_type_render_infos[i];
 
-        transfer_buffers(command_buffer, num_face_vertices_array[i], 1, &face_num_vertex_bytes, &face_vertex_stagings[i], &render_info->vertex_buffer);
-        transfer_buffers(command_buffer, render_info->num_indices, 1, &face_num_index_bytes, &face_index_stagings[i], &render_info->index_buffer);
+        vkCmdCopyBuffer(command_buffer, face_vertex_stagings[i].buffer, render_info->vertex_buffer, 1, &(VkBufferCopy) {
+            .size = num_face_vertex_bytes*num_face_vertices_array[i]
+        });
+        vkCmdCopyBuffer(command_buffer, face_index_stagings[i].buffer, render_info->index_buffer, 1, &(VkBufferCopy) {
+            .size = num_face_index_bytes*render_info->num_indices
+        });
     }
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
@@ -223,10 +255,19 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
             const voxel_face_model_render_info_t* model_render_info = &render_info->face_model_infos[j];
 
             if (model_render_info->num_instances != 0) {
-                transfer_buffers(command_buffer, model_render_info->num_instances, 1, &face_num_instance_bytes, &staging->face_model_stagings[j], &model_render_info->instance_buffer);
+                vkCmdCopyBuffer(command_buffer, staging->face_model_stagings[j].buffer, model_render_info->instance_buffer, 1, &(VkBufferCopy) {
+                    .size = num_face_instance_bytes*model_render_info->num_instances
+                });
             }
         }
     }
+
+    vkCmdCopyBuffer(command_buffer, text_glyph_vertex_staging.buffer, text_glyph_render_info.vertex_buffer, 1, &(VkBufferCopy) {
+        .size = num_text_glyph_vertex_bytes*num_text_glyph_vertices
+    });
+    vkCmdCopyBuffer(command_buffer, text_glyph_index_staging.buffer, text_glyph_render_info.index_buffer, 1, &(VkBufferCopy) {
+        .size = num_text_glyph_index_bytes*num_text_glyph_indices
+    });
 
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
         return "Failed to write to transfer command buffer\n";
@@ -246,17 +287,21 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     end_images(NUM_TEXTURE_IMAGES, image_stagings);
 
     for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
-        end_buffers(1, &face_vertex_stagings[i]);
-        end_buffers(1, &face_index_stagings[i]);
+        vmaDestroyBuffer(allocator, face_vertex_stagings[i].buffer, face_vertex_stagings[i].allocation);
+        vmaDestroyBuffer(allocator, face_index_stagings[i].buffer, face_index_stagings[i].allocation);
     }
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
             if (voxel_region_render_infos[i].face_model_infos[j].num_instances != 0) {
-                end_buffers(1, &voxel_region_stagings[i].face_model_stagings[j]);
+                staging_t* staging = &voxel_region_stagings[i].face_model_stagings[j];
+                vmaDestroyBuffer(allocator, staging->buffer, staging->allocation);
             }
         }
     }
+
+    vmaDestroyBuffer(allocator, text_glyph_vertex_staging.buffer, text_glyph_vertex_staging.allocation);
+    vmaDestroyBuffer(allocator, text_glyph_index_staging.buffer, text_glyph_index_staging.allocation);
 
     //
 
@@ -313,4 +358,7 @@ void term_assets(void) {
             }
         }
     }
+
+    vmaDestroyBuffer(allocator, text_glyph_render_info.vertex_buffer, text_glyph_allocation_info.vertex_allocation);
+    vmaDestroyBuffer(allocator, text_glyph_render_info.index_buffer, text_glyph_allocation_info.index_allocation);
 }
