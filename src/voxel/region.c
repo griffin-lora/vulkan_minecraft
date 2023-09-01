@@ -184,6 +184,9 @@ result_t begin_voxel_face_model_info(voxel_face_instance_array_t* instance_array
 
     uint32_t num_chunks = div_ceil_uint32(num_instances, NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS); // Integer ceiling division
     uint32_t num_last_chunk_instances = num_instances % NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS;
+    if (num_last_chunk_instances == 0) {
+        num_last_chunk_instances = NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS;
+    }
 
     void* mapped_data;
     if (vmaMapMemory(allocator, staging->allocation, &mapped_data) != VK_SUCCESS) {
