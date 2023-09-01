@@ -53,9 +53,9 @@ const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint
     
     text_glyph_vertex_t text_glyph_vertices[NUM_TEXT_GLYPH_VERTICES] = {
         { {{ 0.0f, 0.0f }}, {{ 0.0f, 0.0f }} },
-        { {{ 1.0f/(float)TEXT_GLYPH_SIZE, 0.0f }}, {{ (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_width, 0.0f }} },
-        { {{ 1.0f/(float)TEXT_GLYPH_SIZE, 1.0f/(float)TEXT_GLYPH_SIZE }}, {{ (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_width, (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_height }} },
-        { {{ 0.0f, 1.0f/(float)TEXT_GLYPH_SIZE }}, {{ 0.0f, (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_height }} }
+        { {{ (float)TEXT_GLYPH_SCREEN_SIZE, 0.0f }}, {{ (float)TEXT_GLYPH_TEXTURE_SIZE/(float)text_glyph_image_width, 0.0f }} },
+        { {{ (float)TEXT_GLYPH_SCREEN_SIZE, (float)TEXT_GLYPH_SCREEN_SIZE }}, {{ (float)TEXT_GLYPH_TEXTURE_SIZE/(float)text_glyph_image_width, (float)TEXT_GLYPH_TEXTURE_SIZE/(float)text_glyph_image_height }} },
+        { {{ 0.0f, (float)TEXT_GLYPH_SCREEN_SIZE }}, {{ 0.0f, (float)TEXT_GLYPH_TEXTURE_SIZE/(float)text_glyph_image_height }} }
     };
     
     uint16_t text_glyph_indices[NUM_TEXT_GLYPH_INDICES] = {
@@ -70,7 +70,7 @@ const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint
         return "Failed to begin creating index buffer\n";
     }
 
-    if (init_text_model(FPS_TEXT_MODEL_INDEX, (vec2s) {{ 0.0f, 0.0f }}, NUM_FPS_TEXT_MODEL_GLYPHS) != result_success) {
+    if (init_text_model(FPS_TEXT_MODEL_INDEX, (vec2s) {{ -0.9f, -0.9f }}, NUM_FPS_TEXT_MODEL_GLYPHS) != result_success) {
         return "Failed to create text model\n";
     }
 
@@ -133,12 +133,12 @@ result_t set_text_model_message(size_t index, const char* message) {
     for (uint32_t i = 0; i < num_glyphs; i++) {
         int32_t glyph_char = message[i];
         
-        vec2s glyph_tex_coord = {{ (float)(glyph_char*TEXT_GLYPH_SIZE % (int32_t)text_glyph_image_width), (float)(TEXT_GLYPH_SIZE*(glyph_char*TEXT_GLYPH_SIZE / (int32_t)text_glyph_image_width)) }};
+        vec2s glyph_tex_coord = {{ (float)(glyph_char*TEXT_GLYPH_TEXTURE_SIZE % (int32_t)text_glyph_image_width), (float)(TEXT_GLYPH_TEXTURE_SIZE*(glyph_char*TEXT_GLYPH_TEXTURE_SIZE / (int32_t)text_glyph_image_width)) }};
         glyph_tex_coord.x /= (float)text_glyph_image_width;
         glyph_tex_coord.y /= (float)text_glyph_image_height;
 
         instances[i] = (text_glyph_instance_t) {
-            .position = {{ (float)i/(float)TEXT_GLYPH_SIZE, 0.0f }},
+            .position = {{ (float)i*(float)TEXT_GLYPH_SCREEN_SIZE, 0.0f }},
             .tex_coord = {{ glyph_tex_coord.x, glyph_tex_coord.y }},
         };
     }

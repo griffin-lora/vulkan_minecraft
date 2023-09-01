@@ -48,7 +48,8 @@ extern text_model_allocation_info_t text_model_allocation_infos[NUM_TEXT_MODELS]
 
 extern VkSampler text_texture_image_sampler;
 
-#define TEXT_GLYPH_SIZE 8
+#define TEXT_GLYPH_SCREEN_SIZE 24
+#define TEXT_GLYPH_TEXTURE_SIZE 8
 
 #define FPS_TEXT_MODEL_INDEX 0
 #define NUM_FPS_TEXT_MODEL_GLYPHS 32

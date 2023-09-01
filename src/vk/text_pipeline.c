@@ -12,6 +12,11 @@
 
 alignas(64) static graphics_pipeline_render_info_t pipeline_info;
 
+typedef struct {
+    vec2s size_reciprocal;
+    vec2s model_position;
+} push_constants_t;
+
 const char* init_text_pipeline(void) {
     if (create_descriptor_set(
         &(VkDescriptorSetLayoutCreateInfo) {
@@ -48,7 +53,7 @@ const char* init_text_pipeline(void) {
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &(VkPushConstantRange) {
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .size = sizeof(vec2s)
+            .size = sizeof(push_constants_t)
         }
     }, NULL, &pipeline_info.pipeline_layout) != VK_SUCCESS) {
         return "Failed to create pipeline layout\n";
@@ -148,6 +153,18 @@ const char* init_text_pipeline(void) {
 void draw_text_pipeline(VkCommandBuffer command_buffer) {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline);
     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline_layout, 0, 1, &pipeline_info.descriptor_set, 0, NULL);
+
+    push_constants_t push_constants = { 0 };
+    int width;
+    int height;
+    glfwGetFramebufferSize(window, &width, &height);
+
+    // Because [-1, 1] coordinates
+    width /= 2;
+    height /= 2;
+
+    push_constants.size_reciprocal = (vec2s) {{ 1.0f/(float)width, 1.0f/(float)height }};
+    vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, size_reciprocal), sizeof(push_constants.size_reciprocal), &push_constants.size_reciprocal);
     
     for (size_t i = 0; i < NUM_TEXT_MODELS; i++) {
         const text_model_render_info_t* model_render_info = &text_model_render_infos[i];
@@ -156,7 +173,7 @@ void draw_text_pipeline(VkCommandBuffer command_buffer) {
             continue;
         }
 
-        vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(vec2s), &model_render_info->model_position);
+        vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, model_position), sizeof(push_constants.model_position), &model_render_info->model_position);
         
         bind_vertex_buffers(command_buffer, 2, (VkBuffer[2]) {
             model_render_info->instance_buffer,

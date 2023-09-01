@@ -161,7 +161,7 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
 
     push_constants_t push_constants = { 0 };
 
-    vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants.view_projection), &camera_view_projection);
+    vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, view_projection), sizeof(push_constants.view_projection), &camera_view_projection);
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[i];
