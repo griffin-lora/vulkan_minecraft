@@ -8,6 +8,7 @@
 #include "util.h"
 #include "defaults.h"
 #include "text_assets.h"
+#include "timing.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -155,6 +156,8 @@ const char* init_frame_rendering(void) {
 }
 
 const char* draw_frame(float) {
+    microseconds_t start_time = get_current_microseconds();
+
     VkSemaphore image_available_semaphore = image_available_semaphores[frame_index];
     VkSemaphore render_finished_semaphore = render_finished_semaphores[frame_index];
     VkFence in_flight_fence = in_flight_fences[frame_index];
@@ -177,6 +180,10 @@ const char* draw_frame(float) {
     VkCommandBuffer command_buffer = frame_command_buffers[frame_index];
 
     vkResetCommandBuffer(command_buffer, 0);
+
+    begin_frame_time = get_current_microseconds() - start_time;
+    start_time = get_current_microseconds();
+
     if (vkBeginCommandBuffer(command_buffer, &(VkCommandBufferBeginInfo) {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     }) != VK_SUCCESS) {
@@ -213,7 +220,7 @@ const char* draw_frame(float) {
             { .depthStencil = { .depth = 1.0f, .stencil = 0 } },
         }
     }, VK_SUBPASS_CONTENTS_INLINE);
-
+    
     draw_graphics_pipelines(command_buffer);
     
     vkCmdEndRenderPass(command_buffer);
@@ -221,6 +228,9 @@ const char* draw_frame(float) {
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
         return "Failed to end command buffer\n";
     }
+
+    write_command_buffer_time = get_current_microseconds() - start_time;
+    start_time = get_current_microseconds();
 
     VkPipelineStageFlags wait_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
@@ -236,6 +246,9 @@ const char* draw_frame(float) {
     }, in_flight_fence) != VK_SUCCESS) {
         return "Failed to submit to graphics queue\n";
     }
+
+    queue_submit_time = get_current_microseconds() - start_time;
+    start_time = get_current_microseconds();
 
     {
         VkResult result = vkQueuePresentKHR(presentation_queue, &(VkPresentInfoKHR) {
@@ -255,6 +268,8 @@ const char* draw_frame(float) {
             return "Failed to present swap chain image";
         }
     }
+    
+    swapchain_present_time = get_current_microseconds() - start_time;
 
     frame_index += 1;
     frame_index %= NUM_FRAMES_IN_FLIGHT;
