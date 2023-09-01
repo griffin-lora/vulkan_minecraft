@@ -11,7 +11,8 @@ alignas(64) voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL
 alignas(64) voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
 
 alignas(64) voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS] = { 0 };
-alignas(64) voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS] = { 0 };
+alignas(64) voxel_face_model_render_info_t voxel_face_model_render_info_arrays[NUM_VOXEL_FACE_TYPES][NUM_VOXEL_REGIONS] = { 0 };
+alignas(64) voxel_face_model_allocation_info_t voxel_face_model_allocation_info_arrays[NUM_VOXEL_FACE_TYPES][NUM_VOXEL_REGIONS];
 
 VkSampler voxel_region_texture_image_sampler;
 
@@ -21,7 +22,7 @@ typedef struct {
     staging_t face_vertex_stagings[NUM_VOXEL_FACE_TYPES];
     staging_t face_index_stagings[NUM_VOXEL_FACE_TYPES];
 
-    voxel_region_staging_t voxel_region_stagings[NUM_VOXEL_REGIONS];
+    staging_t voxel_face_model_staging_arrays[NUM_VOXEL_FACE_TYPES][NUM_VOXEL_REGIONS];
 } voxel_assets_info_t;
 
 static voxel_assets_info_t* info;
@@ -94,8 +95,6 @@ const char* begin_voxel_assets(float max_anistropy, uint32_t num_mip_levels) {
         i = 0;
         for (size_t x = 0; x < NUM_XZ_VOXEL_REGIONS; x++)
         for (size_t z = 0; z < NUM_XZ_VOXEL_REGIONS; z++, i++) {
-            voxel_region_render_info_t* render_info = &voxel_region_render_infos[i];
-
             voxel_face_instance_arrays_t face_instance_arrays = { 0 };
             create_voxel_face_instance_arrays(&(voxel_region_voxel_type_arrays_t) {
                 .center = &voxel_type_arrays[x][z],
@@ -104,11 +103,12 @@ const char* begin_voxel_assets(float max_anistropy, uint32_t num_mip_levels) {
                 .right = z + 1u < NUM_XZ_VOXEL_REGIONS ? &voxel_type_arrays[x][z + 1] : NULL,
                 .left = z - 1u < NUM_XZ_VOXEL_REGIONS ? &voxel_type_arrays[x][z - 1] : NULL,
             }, &face_instance_arrays);
-            
-            if (begin_voxel_region_info(&face_instance_arrays, &info->voxel_region_stagings[i], render_info, &voxel_region_allocation_infos[i]) != result_success) {
-                return "Failed to begin creating voxel region info\n";
-            }
 
+            for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
+                if (begin_voxel_face_model_info(&face_instance_arrays.arrays[j], &info->voxel_face_model_staging_arrays[j][i], &voxel_face_model_render_info_arrays[j][i], &voxel_face_model_allocation_info_arrays[j][i]) != result_success) {
+                    return "Failed to begin creating voxel region info\n";
+                }
+            }
         }
     }
 
@@ -129,17 +129,12 @@ void transfer_voxel_assets(VkCommandBuffer command_buffer) {
         vkCmdCopyBuffer(command_buffer, info->face_index_stagings[i].buffer, render_info->index_buffer, 1, &(VkBufferCopy) {
             .size = sizeof(uint16_t)*render_info->num_indices
         });
-    }
 
-    for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
-        const voxel_region_render_info_t* render_info = &voxel_region_render_infos[i];
-        const voxel_region_staging_t* staging = &info->voxel_region_stagings[i];
-
-        for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
-            const voxel_face_model_render_info_t* model_render_info = &render_info->face_model_infos[j];
+        for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
+            const voxel_face_model_render_info_t* model_render_info = &voxel_face_model_render_info_arrays[i][j];
 
             if (model_render_info->num_instances != 0) {
-                vkCmdCopyBuffer(command_buffer, staging->face_model_stagings[j].buffer, model_render_info->instance_buffer, 1, &(VkBufferCopy) {
+                vkCmdCopyBuffer(command_buffer, info->voxel_face_model_staging_arrays[i][j].buffer, model_render_info->instance_buffer, 1, &(VkBufferCopy) {
                     .size = sizeof(voxel_face_instance_t)*model_render_info->num_instances
                 });
             }
@@ -151,14 +146,10 @@ void end_voxel_assets() {
     for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
         vmaDestroyBuffer(allocator, info->face_vertex_stagings[i].buffer, info->face_vertex_stagings[i].allocation);
         vmaDestroyBuffer(allocator, info->face_index_stagings[i].buffer, info->face_index_stagings[i].allocation);
-    }
 
-    for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
-        for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
-            if (voxel_region_render_infos[i].face_model_infos[j].num_instances != 0) {
-                const staging_t* staging = &info->voxel_region_stagings[i].face_model_stagings[j];
-                vmaDestroyBuffer(allocator, staging->buffer, staging->allocation);
-            }
+        for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
+            const staging_t* staging = &info->voxel_face_model_staging_arrays[i][j];
+            vmaDestroyBuffer(allocator, staging->buffer, staging->allocation);
         }
     }
 
@@ -174,13 +165,11 @@ void term_voxel_assets(void) {
 
         vmaDestroyBuffer(allocator, render_info->vertex_buffer, allocation_info->vertex_allocation);
         vmaDestroyBuffer(allocator, render_info->index_buffer, allocation_info->index_allocation);
-    }
 
-    for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
-        for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
-            const voxel_face_model_render_info_t* model_render_info = &voxel_region_render_infos[i].face_model_infos[j];
-            const voxel_face_model_allocation_info_t* model_allocation_info = &voxel_region_allocation_infos[i].face_model_infos[j];
-            
+        for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
+            const voxel_face_model_render_info_t* model_render_info = &voxel_face_model_render_info_arrays[i][j];
+            const voxel_face_model_allocation_info_t* model_allocation_info = &voxel_face_model_allocation_info_arrays[i][j];
+
             if (model_render_info->num_instances != 0) {
                 vmaDestroyBuffer(allocator, model_render_info->instance_buffer, model_allocation_info->instance_allocation);
             }

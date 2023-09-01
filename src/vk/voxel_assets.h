@@ -9,7 +9,8 @@ extern voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VO
 #define NUM_VOXEL_REGIONS 64
 
 extern voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS];
-extern voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS];
+extern voxel_face_model_render_info_t voxel_face_model_render_info_arrays[NUM_VOXEL_FACE_TYPES][NUM_VOXEL_REGIONS];
+extern voxel_face_model_allocation_info_t voxel_face_model_allocation_info_arrays[NUM_VOXEL_FACE_TYPES][NUM_VOXEL_REGIONS];
 
 extern VkSampler voxel_region_texture_image_sampler;
 

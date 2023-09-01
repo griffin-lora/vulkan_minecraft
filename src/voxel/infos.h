@@ -34,13 +34,4 @@ typedef struct {
 
 typedef struct {
     vec3s position;
-    voxel_face_model_render_info_t face_model_infos[NUM_VOXEL_FACE_TYPES];
 } voxel_region_render_info_t;
-
-typedef struct {
-    voxel_face_model_allocation_info_t face_model_infos[NUM_VOXEL_FACE_TYPES];
-} voxel_region_allocation_info_t;
-
-typedef struct {
-    staging_t face_model_stagings[NUM_VOXEL_FACE_TYPES];
-} voxel_region_staging_t;

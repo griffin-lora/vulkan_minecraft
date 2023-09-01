@@ -163,25 +163,26 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
 
     vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, view_projection), sizeof(push_constants.view_projection), &camera_view_projection);
 
-    for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
-        const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[i];
+    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
+        const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[i];
+        vkCmdBindIndexBuffer(command_buffer, type_render_info->index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindVertexBuffers(command_buffer, 1, 1, &type_render_info->vertex_buffer, (VkDeviceSize[1]) { 0 });
 
-        vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, region_position), sizeof(push_constants.region_position), &region_render_info->position);
+        uint32_t num_indices = type_render_info->num_indices;
 
-        for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
-            const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[j];
-            const voxel_face_model_render_info_t* model_render_info = &region_render_info->face_model_infos[j];
+        for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
+            const voxel_face_model_render_info_t* model_render_info = &voxel_face_model_render_info_arrays[i][j];
 
             if (model_render_info->num_instances == 0) {
                 continue;
             }
 
-            bind_vertex_buffers(command_buffer, 2, (VkBuffer[2]) {
-                model_render_info->instance_buffer,
-                type_render_info->vertex_buffer
-            });
-            vkCmdBindIndexBuffer(command_buffer, type_render_info->index_buffer, 0, VK_INDEX_TYPE_UINT16);
-            vkCmdDrawIndexed(command_buffer, type_render_info->num_indices, model_render_info->num_instances, 0, 0, 0);
+            const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[j];
+            vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, region_position), sizeof(push_constants.region_position), &region_render_info->position);
+
+            vkCmdBindVertexBuffers(command_buffer, 0, 1, &model_render_info->instance_buffer, (VkDeviceSize[1]) { 0 });
+
+            vkCmdDrawIndexed(command_buffer, num_indices, model_render_info->num_instances, 0, 0, 0);
         }
     }
 }

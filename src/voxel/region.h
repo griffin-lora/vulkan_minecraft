@@ -42,4 +42,5 @@ typedef struct {
 
 void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size_t region_z, voxel_region_voxel_type_array_t* voxel_types);
 void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* voxel_type_arrays, voxel_face_instance_arrays_t* instance_arrays);
-result_t begin_voxel_region_info(voxel_face_instance_arrays_t* instance_arrays, voxel_region_staging_t* staging, voxel_region_render_info_t* render_info, voxel_region_allocation_info_t* allocation_info);
+
+result_t begin_voxel_face_model_info(voxel_face_instance_array_t* instance_array, staging_t* staging, voxel_face_model_render_info_t* render_info, voxel_face_model_allocation_info_t* allocation_info);

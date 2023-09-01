@@ -53,6 +53,4 @@ void begin_pipeline(
     VkRenderPass render_pass, VkDescriptorSet descriptor_set, VkPipelineLayout pipeline_layout, VkPipeline pipeline
 );
 
-void bind_vertex_buffers(VkCommandBuffer command_buffer, uint32_t num_vertex_buffers, const VkBuffer vertex_buffers[]);
-
 void end_pipeline(VkCommandBuffer command_buffer);

@@ -316,12 +316,6 @@ void begin_pipeline(
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
 }
 
-void bind_vertex_buffers(VkCommandBuffer command_buffer, uint32_t num_vertex_buffers, const VkBuffer vertex_buffers[]) {
-    VkDeviceSize offsets[num_vertex_buffers];
-    memset(offsets, 0, num_vertex_buffers*sizeof(VkDeviceSize));
-    vkCmdBindVertexBuffers(command_buffer, 0, num_vertex_buffers, vertex_buffers, offsets);
-}
-
 void end_pipeline(VkCommandBuffer command_buffer) {
     vkCmdEndRenderPass(command_buffer);
 }

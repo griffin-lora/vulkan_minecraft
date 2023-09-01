@@ -165,6 +165,9 @@ void draw_text_pipeline(VkCommandBuffer command_buffer) {
 
     push_constants.size_reciprocal = (vec2s) {{ 1.0f/(float)width, 1.0f/(float)height }};
     vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, size_reciprocal), sizeof(push_constants.size_reciprocal), &push_constants.size_reciprocal);
+
+    vkCmdBindIndexBuffer(command_buffer, text_glyph_render_info.index_buffer, 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindVertexBuffers(command_buffer, 1, 1, &text_glyph_render_info.vertex_buffer, (VkDeviceSize[1]) { 0 });
     
     for (size_t i = 0; i < NUM_TEXT_MODELS; i++) {
         const text_model_render_info_t* model_render_info = &text_model_render_infos[i];
@@ -175,12 +178,7 @@ void draw_text_pipeline(VkCommandBuffer command_buffer) {
 
         vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, model_position), sizeof(push_constants.model_position), &model_render_info->model_position);
         
-        bind_vertex_buffers(command_buffer, 2, (VkBuffer[2]) {
-            model_render_info->instance_buffer,
-            text_glyph_render_info.vertex_buffer
-        });
-
-        vkCmdBindIndexBuffer(command_buffer, text_glyph_render_info.index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &model_render_info->instance_buffer, (VkDeviceSize[1]) { 0 });
         vkCmdDrawIndexed(command_buffer, NUM_TEXT_GLYPH_INDICES, model_render_info->num_instances, 0, 0, 0);
     }
 }
