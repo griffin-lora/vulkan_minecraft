@@ -2,7 +2,6 @@
 
 layout(push_constant, std430) uniform push_constants_t {
     mat4 view_projection;
-    vec4 camera_position;
     vec4 region_position;
 };
 

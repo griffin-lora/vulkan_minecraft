@@ -1,6 +1,6 @@
 #include "vk/core.h"
 #include "vk/render.h"
-#include "input.h"
+#include "camera.h"
 #include "chrono.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -19,7 +19,7 @@ int main(void) {
         microseconds_t start = get_current_microseconds() - program_start;
         glfwPollEvents();
 
-        handle_input(delta);
+        update_camera(delta);
 
         msg = draw_frame(delta);
         if (msg != NULL) {

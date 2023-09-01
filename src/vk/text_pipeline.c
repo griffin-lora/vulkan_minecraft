@@ -4,6 +4,7 @@
 #include "defaults.h"
 #include "asset.h"
 #include "gfx_pipeline.h"
+#include "voxel_assets.h"
 #include "render.h"
 #include <stdalign.h>
 #include <string.h>
@@ -116,7 +117,7 @@ const char* init_text_pipeline(void) {
                 .image = {
                     .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     .imageView = texture_image_views[1],
-                    .sampler = voxel_texture_image_sampler
+                    .sampler = voxel_region_texture_image_sampler
                 }
             }
         },

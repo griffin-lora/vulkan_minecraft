@@ -7,6 +7,8 @@
 #include "defaults.h"
 #include "render.h"
 #include "gfx_pipeline.h"
+#include "camera.h"
+#include "voxel_assets.h"
 #include "voxel/face_instance.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
@@ -16,16 +18,15 @@
 #include <cglm/struct/mat3.h>
 #include <cglm/struct/affine.h>
 
-alignas(64) voxel_face_type_render_info_t voxel_face_type_render_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
-alignas(64) voxel_face_type_allocation_info_t voxel_face_type_allocation_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
+alignas(64) static graphics_pipeline_render_info_t pipeline_info;
 
-alignas(64) voxel_region_render_info_t voxel_region_render_infos[NUM_VOXEL_REGIONS] = { 0 };
-alignas(64) voxel_region_allocation_info_t voxel_region_allocation_infos[NUM_VOXEL_REGIONS] = { 0 };
-
-alignas(64)
-static graphics_pipeline_render_info_t pipeline_info;
-
-voxel_color_pipeline_push_constants_t voxel_color_pipeline_push_constants = { 0 };
+typedef struct {
+    mat4s view_projection;
+    union {
+        vec3s region_position;
+        float region_position_data[4];
+    };
+} push_constants_t;
 
 const char* init_voxel_color_pipeline(void) {
     if (create_descriptor_set(
@@ -48,7 +49,7 @@ const char* init_voxel_color_pipeline(void) {
                 .image = {
                     .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     .imageView = texture_image_views[0],
-                    .sampler = voxel_texture_image_sampler
+                    .sampler = voxel_region_texture_image_sampler
                 }
             }
         },
@@ -63,7 +64,7 @@ const char* init_voxel_color_pipeline(void) {
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &(VkPushConstantRange) {
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-            .size = sizeof(voxel_color_pipeline_push_constants) + sizeof(vec4s)
+            .size = sizeof(push_constants_t)
         }
     }, NULL, &pipeline_info.pipeline_layout) != VK_SUCCESS) {
         return "Failed to create pipeline layout\n";
@@ -157,12 +158,15 @@ const char* init_voxel_color_pipeline(void) {
 void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline);
     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline_layout, 0, 1, &pipeline_info.descriptor_set, 0, NULL);
-    vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(voxel_color_pipeline_push_constants), &voxel_color_pipeline_push_constants);
+
+    push_constants_t push_constants = { 0 };
+
+    vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(push_constants.view_projection), &camera_view_projection);
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[i];
-        vec4s position = {{ region_render_info->position.x, region_render_info->position.y, region_render_info->position.z, 0.0f }};
-        vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, sizeof(voxel_color_pipeline_push_constants), sizeof(vec4s), &position);
+
+        vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, region_position), sizeof(push_constants.region_position), &region_render_info->position);
 
         for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
             const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[j];

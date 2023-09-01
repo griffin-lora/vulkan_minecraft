@@ -1,4 +1,4 @@
-#include "input.h"
+#include "camera.h"
 #include "vk/core.h"
 #include "vk/voxel_color_pipeline.h"
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -15,6 +15,10 @@
 
 #define MOVE_SPEED 0.3f
 #define ROT_SPEED 2.0f
+
+// TODO: Fix this
+vec3s camera_position;
+mat4s camera_view_projection;
 
 static vec3s cam_pos = {{ 15.462208f, 11.152647f, 15.079316f }};
 static vec3s cam_vel = {{ 0.0f, 0.0f, 0.0f }};
@@ -79,7 +83,7 @@ static vec2s get_desired_rotational_velocity(float aspect) {
     return glms_vec2_scale(glms_vec2_sub(rotation_mode_norm_cursor_position, get_norm_cursor_position(aspect, cursor_position)), ROT_SPEED);
 }
 
-void handle_input(float) {
+void update_camera(float) {
     float aspect = (float)swap_image_extent.width/(float)swap_image_extent.height;
 
     mat4s projection = glms_perspective(M_TAU / 5.0f, aspect, 0.01f, 300.0f);
@@ -128,8 +132,8 @@ void handle_input(float) {
 
     mat4s view = glms_look(cam_pos, cam_forward, (vec3s) {{ 0.0f, -1.0f, 0.0f }});
     
-    voxel_color_pipeline_push_constants.view_projection = glms_mat4_mul(projection, view);
-    voxel_color_pipeline_push_constants.camera_position = cam_pos;
+    camera_view_projection = glms_mat4_mul(projection, view);
+    camera_position = cam_pos;
 
     // printf("%ff, %ff, %ff, %ff, %ff, %ff, %ff, %ff\n", cam_pos.x, cam_pos.y, cam_pos.z, cam_forward.x, cam_forward.y, cam_forward.z, cam_rot.x, cam_rot.y);
 }
