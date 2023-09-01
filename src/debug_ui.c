@@ -19,16 +19,16 @@ result_t update_debug_ui(microseconds_t frame_time, float delta) {
     snprintf(message, NUM_TEXT_MODEL_GLYPHS, 
         "FPS: %f\n"
         "Frame: %ldms\n"
+        "In Flight: %ldms\n"
         "Begin Frame: %ldms\n"
         "Write Command Buffer: %ldms\n"
-        "Queue Submit: %ldms\n"
-        "Swapchain Present: %ldms\n",
+        "End Frame: %ldms\n",
         1.0f/delta,
         get_milliseconds(frame_time),
+        get_milliseconds(in_flight_time),
         get_milliseconds(begin_frame_time),
         get_milliseconds(write_command_buffer_time),
-        get_milliseconds(queue_submit_time),
-        get_milliseconds(swapchain_present_time)
+        get_milliseconds(end_frame_time)
     );
 
     if (set_text_model_message(TEXT_MODEL_INDEX, message) != result_success) {

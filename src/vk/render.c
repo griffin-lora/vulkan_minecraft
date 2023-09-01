@@ -164,6 +164,9 @@ const char* draw_frame(float) {
 
     vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
 
+    in_flight_time = get_current_microseconds() - start_time;
+    start_time = get_current_microseconds();
+
     uint32_t image_index;
     {
         VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, image_available_semaphore, VK_NULL_HANDLE, &image_index);
@@ -247,9 +250,6 @@ const char* draw_frame(float) {
         return "Failed to submit to graphics queue\n";
     }
 
-    queue_submit_time = get_current_microseconds() - start_time;
-    start_time = get_current_microseconds();
-
     {
         VkResult result = vkQueuePresentKHR(presentation_queue, &(VkPresentInfoKHR) {
             .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -268,11 +268,11 @@ const char* draw_frame(float) {
             return "Failed to present swap chain image";
         }
     }
-    
-    swapchain_present_time = get_current_microseconds() - start_time;
 
     frame_index += 1;
     frame_index %= NUM_FRAMES_IN_FLIGHT;
+
+    end_frame_time = get_current_microseconds() - start_time;
 
     return NULL;
 }
