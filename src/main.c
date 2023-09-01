@@ -1,6 +1,7 @@
 #include "vk/core.h"
 #include "vk/render.h"
 #include "camera.h"
+#include "debug_ui.h"
 #include "chrono.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -30,14 +31,16 @@ int main(void) {
         microseconds_t delta_microseconds = end - start;
         delta = (float)delta_microseconds/1000000.0f;
 
-        if (delta > (1.0f/60.0f)) {
-            printf("%f\n", delta);
-        }
-
         microseconds_t remaining_microseconds = (1000000l/60l) - delta_microseconds;
         if (remaining_microseconds > 0) {
             sleep_microseconds(remaining_microseconds);
         }
+
+        end = get_current_microseconds() - program_start;
+        microseconds_t new_delta_microseconds = end - start;
+        delta = (float)new_delta_microseconds/1000000.0f;
+
+        update_debug_ui(delta_microseconds, delta);
     }
 
     term_all();

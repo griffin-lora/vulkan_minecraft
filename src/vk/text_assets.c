@@ -70,10 +70,6 @@ const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint
         return "Failed to begin creating index buffer\n";
     }
 
-    if (init_text_model(FPS_TEXT_MODEL_INDEX, (vec2s) {{ -0.9f, -0.9f }}, NUM_FPS_TEXT_MODEL_GLYPHS) != result_success) {
-        return "Failed to create text model\n";
-    }
-
     return NULL;
 }
 
@@ -127,20 +123,36 @@ result_t set_text_model_message(size_t index, const char* message) {
         return result_failure;
     }
 
-    uint32_t num_glyphs = (uint32_t)strlen(message);
+    uint32_t num_characters = (uint32_t)strlen(message);
+
+    uint32_t num_glyphs = num_characters;
+    for (uint32_t i = 0; i < num_characters; i++) {
+        if (message[i] == '\n') {
+            num_glyphs--;
+        }
+    }
 
     text_glyph_instance_t instances[num_glyphs];
-    for (uint32_t i = 0; i < num_glyphs; i++) {
+    uint32_t instance_index = 0;
+    vec2s glyph_position = (vec2s) {{ 0.0f, 0.0f }};
+    for (uint32_t i = 0; i < num_characters; i++) {
+        if (message[i] == '\n') {
+            glyph_position = (vec2s) {{ 0.0f, glyph_position.y + TEXT_GLYPH_SCREEN_SIZE }};
+            continue;
+        }
+
         int32_t glyph_char = message[i];
         
         vec2s glyph_tex_coord = {{ (float)(glyph_char*TEXT_GLYPH_TEXTURE_SIZE % (int32_t)text_glyph_image_width), (float)(TEXT_GLYPH_TEXTURE_SIZE*(glyph_char*TEXT_GLYPH_TEXTURE_SIZE / (int32_t)text_glyph_image_width)) }};
         glyph_tex_coord.x /= (float)text_glyph_image_width;
         glyph_tex_coord.y /= (float)text_glyph_image_height;
 
-        instances[i] = (text_glyph_instance_t) {
-            .position = {{ (float)i*(float)TEXT_GLYPH_SCREEN_SIZE, 0.0f }},
-            .tex_coord = {{ glyph_tex_coord.x, glyph_tex_coord.y }},
+        instances[instance_index++] = (text_glyph_instance_t) {
+            .position = glyph_position,
+            .tex_coord = glyph_tex_coord,
         };
+
+        glyph_position.x += TEXT_GLYPH_SCREEN_SIZE;
     }
 
     if (write_to_buffer(text_model_staging_allocations[index], sizeof(instances), instances) != result_success) {

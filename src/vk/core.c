@@ -7,6 +7,7 @@
 #include "gfx_core.h"
 #include "defaults.h"
 #include "render.h"
+#include "debug_ui.h"
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
@@ -524,6 +525,10 @@ const char* init_core(void) {
 
     msg = init_graphics_pipelines();
     if (msg != NULL) { return msg; }
+
+    if (init_debug_ui() != result_success) {
+        return "Failed to initialize debug ui\n";
+    }
 
     vkGetSwapchainImagesKHR(device, swapchain, &num_swapchain_images, NULL);
     swapchain_images = memalign(64, num_swapchain_images*sizeof(VkImage));

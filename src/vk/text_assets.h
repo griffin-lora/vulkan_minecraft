@@ -51,9 +51,6 @@ extern VkSampler text_texture_image_sampler;
 #define TEXT_GLYPH_SCREEN_SIZE 24
 #define TEXT_GLYPH_TEXTURE_SIZE 8
 
-#define FPS_TEXT_MODEL_INDEX 0
-#define NUM_FPS_TEXT_MODEL_GLYPHS 32
-
 result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs);
 // NOTE: Can only be called once per frame per index
 result_t set_text_model_message(size_t index, const char* message);

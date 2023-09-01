@@ -154,16 +154,7 @@ const char* init_frame_rendering(void) {
     return NULL;
 }
 
-const char* draw_frame(float delta) {
-    {
-        char message[NUM_FPS_TEXT_MODEL_GLYPHS];
-        snprintf(message, NUM_FPS_TEXT_MODEL_GLYPHS, "FPS: %f", 1.0f/delta);
-
-        if (set_text_model_message(FPS_TEXT_MODEL_INDEX, message) != result_success) {
-            return "Failed to set text model message\n";
-        }
-    }
-
+const char* draw_frame(float) {
     VkSemaphore image_available_semaphore = image_available_semaphores[frame_index];
     VkSemaphore render_finished_semaphore = render_finished_semaphores[frame_index];
     VkFence in_flight_fence = in_flight_fences[frame_index];
