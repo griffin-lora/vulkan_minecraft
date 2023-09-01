@@ -170,8 +170,10 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
 
         uint32_t num_indices = type_render_info->num_indices;
 
+        const voxel_face_model_render_info_t* model_render_infos = voxel_face_model_render_info_arrays[i];
+
         for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
-            const voxel_face_model_render_info_t* model_render_info = &voxel_face_model_render_info_arrays[i][j];
+            const voxel_face_model_render_info_t* model_render_info = &model_render_infos[j];
 
             if (model_render_info->num_instances == 0) {
                 continue;

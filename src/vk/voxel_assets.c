@@ -130,11 +130,14 @@ void transfer_voxel_assets(VkCommandBuffer command_buffer) {
             .size = sizeof(uint16_t)*render_info->num_indices
         });
 
+        const voxel_face_model_render_info_t* model_render_infos = voxel_face_model_render_info_arrays[i];
+        const staging_t* model_stagings = info->voxel_face_model_staging_arrays[i];
+
         for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
-            const voxel_face_model_render_info_t* model_render_info = &voxel_face_model_render_info_arrays[i][j];
+            const voxel_face_model_render_info_t* model_render_info = &model_render_infos[j];
 
             if (model_render_info->num_instances != 0) {
-                vkCmdCopyBuffer(command_buffer, info->voxel_face_model_staging_arrays[i][j].buffer, model_render_info->instance_buffer, 1, &(VkBufferCopy) {
+                vkCmdCopyBuffer(command_buffer, model_stagings[j].buffer, model_render_info->instance_buffer, 1, &(VkBufferCopy) {
                     .size = sizeof(voxel_face_instance_t)*model_render_info->num_instances
                 });
             }
@@ -147,8 +150,10 @@ void end_voxel_assets() {
         vmaDestroyBuffer(allocator, info->face_vertex_stagings[i].buffer, info->face_vertex_stagings[i].allocation);
         vmaDestroyBuffer(allocator, info->face_index_stagings[i].buffer, info->face_index_stagings[i].allocation);
 
+        const staging_t* model_statings = info->voxel_face_model_staging_arrays[i];
+
         for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
-            const staging_t* staging = &info->voxel_face_model_staging_arrays[i][j];
+            const staging_t* staging = &model_statings[j];
             vmaDestroyBuffer(allocator, staging->buffer, staging->allocation);
         }
     }
@@ -166,9 +171,12 @@ void term_voxel_assets(void) {
         vmaDestroyBuffer(allocator, render_info->vertex_buffer, allocation_info->vertex_allocation);
         vmaDestroyBuffer(allocator, render_info->index_buffer, allocation_info->index_allocation);
 
+        const voxel_face_model_render_info_t* model_render_infos = voxel_face_model_render_info_arrays[i];
+        const voxel_face_model_allocation_info_t* model_allocation_infos = voxel_face_model_allocation_info_arrays[i];
+
         for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
-            const voxel_face_model_render_info_t* model_render_info = &voxel_face_model_render_info_arrays[i][j];
-            const voxel_face_model_allocation_info_t* model_allocation_info = &voxel_face_model_allocation_info_arrays[i][j];
+            const voxel_face_model_render_info_t* model_render_info = &model_render_infos[j];
+            const voxel_face_model_allocation_info_t* model_allocation_info = &model_allocation_infos[j];
 
             if (model_render_info->num_instances != 0) {
                 vmaDestroyBuffer(allocator, model_render_info->instance_buffer, model_allocation_info->instance_allocation);
