@@ -10,6 +10,7 @@ typedef struct {
 } graphics_pipeline_render_info_t;
 
 const char* init_graphics_pipelines(void);
-void transfer_graphics_pipelines(VkCommandBuffer command_buffer);
 void draw_graphics_pipelines(VkCommandBuffer command_buffer);
 void term_graphics_pipelines(void);
+
+void destroy_graphics_pipeline(const graphics_pipeline_render_info_t* info);

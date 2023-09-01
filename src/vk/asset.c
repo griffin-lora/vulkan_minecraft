@@ -7,6 +7,7 @@
 #include "text_pipeline.h"
 #include "defaults.h"
 #include "voxel_assets.h"
+#include "text_assets.h"
 #include "voxel/face_instance.h"
 #include "voxel/region.h"
 #include <malloc.h>
@@ -24,9 +25,6 @@ alignas(64)
 VkImage texture_images[NUM_TEXTURE_IMAGES];
 VmaAllocation texture_image_allocations[NUM_TEXTURE_IMAGES];
 VkImageView texture_image_views[NUM_TEXTURE_IMAGES];
-
-uint32_t text_glyph_image_width;
-uint32_t text_glyph_image_height;
 
 const char* init_assets(const VkPhysicalDeviceProperties* physical_device_properties) {
     struct {
@@ -110,45 +108,11 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         }
     }
 
-    text_glyph_image_width = image_create_infos[1].info.extent.width;
-    text_glyph_image_height = image_create_infos[1].info.extent.height;
-    
-    text_glyph_vertex_t text_glyph_vertices[] = {
-        { {{ 0.0f, 0.0f }}, {{ 0.0f, 0.0f }} },
-        { {{ 1.0f/(float)TEXT_GLYPH_SIZE, 0.0f }}, {{ (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_width, 0.0f }} },
-        { {{ 1.0f/(float)TEXT_GLYPH_SIZE, 1.0f/(float)TEXT_GLYPH_SIZE }}, {{ (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_width, (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_height }} },
-        { {{ 0.0f, 1.0f/(float)TEXT_GLYPH_SIZE }}, {{ 0.0f, (float)TEXT_GLYPH_SIZE/(float)text_glyph_image_height }} }
-    };
-    
-    uint16_t text_glyph_indices[] = {
-        0, 1, 2, 2, 3, 0
-    };
-    
-    uint32_t num_text_glyph_vertices = NUM_ELEMS(text_glyph_vertices);
-    uint32_t num_text_glyph_indices = NUM_ELEMS(text_glyph_indices);
-
-    text_glyph_render_info.num_indices = num_text_glyph_indices;
-
-    staging_t text_glyph_vertex_staging;
-    staging_t text_glyph_index_staging;
-
-    uint32_t num_text_glyph_vertex_bytes = sizeof(text_glyph_vertex_t);
-    uint32_t num_text_glyph_index_bytes = sizeof(uint16_t);
-
     const char* msg = begin_voxel_assets(physical_device_properties->limits.maxSamplerAnisotropy, image_create_infos[0].info.mipLevels);
     if (msg != NULL) { return msg; }
 
-    if (begin_buffer(&vertex_buffer_create_info, num_text_glyph_vertices, num_text_glyph_vertex_bytes, text_glyph_vertices, &text_glyph_vertex_staging, &text_glyph_render_info.vertex_buffer, &text_glyph_allocation_info.vertex_allocation) != result_success) {
-        return "Failed to begin creating vertex buffer\n";
-    }
-
-    if (begin_buffer(&index_buffer_create_info, num_text_glyph_indices, num_text_glyph_index_bytes, text_glyph_indices, &text_glyph_index_staging, &text_glyph_render_info.index_buffer, &text_glyph_allocation_info.index_allocation) != result_success) {
-        return "Failed to begin creating index buffer\n";
-    }
-
-    if (init_text_model(FPS_TEXT_MODEL_INDEX, (vec2s) {{ 0.0f, 0.0f }}, NUM_FPS_TEXT_MODEL_GLYPHS) != result_success) {
-        return "Failed to create text model\n";
-    }
+    msg = begin_text_assets(physical_device_properties->limits.maxSamplerAnisotropy, image_create_infos[1].info.mipLevels, image_create_infos[1].info.extent.width, image_create_infos[1].info.extent.height);
+    if (msg != NULL) { return msg; }
 
     //
 
@@ -177,13 +141,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     transfer_images(command_buffer, NUM_TEXTURE_IMAGES, image_create_infos, image_stagings, texture_images);
 
     transfer_voxel_assets(command_buffer);
-
-    vkCmdCopyBuffer(command_buffer, text_glyph_vertex_staging.buffer, text_glyph_render_info.vertex_buffer, 1, &(VkBufferCopy) {
-        .size = num_text_glyph_vertex_bytes*num_text_glyph_vertices
-    });
-    vkCmdCopyBuffer(command_buffer, text_glyph_index_staging.buffer, text_glyph_render_info.index_buffer, 1, &(VkBufferCopy) {
-        .size = num_text_glyph_index_bytes*num_text_glyph_indices
-    });
+    transfer_text_assets(command_buffer);
 
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
         return "Failed to write to transfer command buffer\n";
@@ -203,9 +161,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     end_images(NUM_TEXTURE_IMAGES, image_stagings);
 
     end_voxel_assets();
-
-    vmaDestroyBuffer(allocator, text_glyph_vertex_staging.buffer, text_glyph_vertex_staging.allocation);
-    vmaDestroyBuffer(allocator, text_glyph_index_staging.buffer, text_glyph_index_staging.allocation);
+    end_text_assets();
 
     //
 
@@ -232,7 +188,5 @@ void term_assets(void) {
     destroy_images(NUM_TEXTURE_IMAGES, texture_images, texture_image_allocations, texture_image_views);
 
     term_voxel_assets();
-
-    vmaDestroyBuffer(allocator, text_glyph_render_info.vertex_buffer, text_glyph_allocation_info.vertex_allocation);
-    vmaDestroyBuffer(allocator, text_glyph_render_info.index_buffer, text_glyph_allocation_info.index_allocation);
+    term_text_assets();
 }

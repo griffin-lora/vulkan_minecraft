@@ -4,97 +4,13 @@
 #include "defaults.h"
 #include "asset.h"
 #include "gfx_pipeline.h"
-#include "voxel_assets.h"
+#include "text_assets.h"
 #include "render.h"
 #include <stdalign.h>
 #include <string.h>
 #include <stdio.h>
 
-typedef struct {
-    vec2s model_position;
-    VkBuffer instance_buffer;
-    uint32_t num_instances;
-} text_model_render_info_t;
-
-typedef struct {
-    VmaAllocation instance_allocation;
-} text_model_allocation_info_t;
-
-alignas(64)
-static graphics_pipeline_render_info_t pipeline_info;
-text_glyph_render_info_t text_glyph_render_info = { 0 };
-text_glyph_allocation_info_t text_glyph_allocation_info = { 0 };
-
-#define NUM_TEXT_MODELS 1
-
-alignas(64) static text_model_render_info_t text_model_render_infos[NUM_TEXT_MODELS] = { 0 };
-alignas(64) static text_model_allocation_info_t text_model_allocation_infos[NUM_TEXT_MODELS] = { 0 };
-alignas(64) static VkBuffer text_model_staging_buffers[NUM_TEXT_MODELS] = { 0 };
-alignas(64) static VmaAllocation text_model_staging_allocations[NUM_TEXT_MODELS] = { 0 };
-
-alignas(64)
-static size_t num_text_model_staging_updates = 0;
-static VkBuffer text_model_staging_updates[NUM_TEXT_MODELS] = { 0 };
-
-result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs) {
-    if (index >= NUM_TEXT_MODELS) {
-        return result_failure;
-    }
-
-    text_model_render_info_t* render_info = &text_model_render_infos[index];
-    text_model_allocation_info_t* allocation_info = &text_model_allocation_infos[index];
-    VkBuffer* staging_buffer = &text_model_staging_buffers[index];
-    VmaAllocation* staging_allocation = &text_model_staging_allocations[index];
-
-    render_info->model_position = model_position;
-
-    if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
-        DEFAULT_VK_STAGING_BUFFER,
-        .size = num_glyphs*sizeof(text_glyph_instance_t)
-    }, &staging_allocation_create_info, staging_buffer, staging_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
-        DEFAULT_VK_VERTEX_BUFFER,
-        .size = num_glyphs*sizeof(text_glyph_instance_t)
-    }, &device_allocation_create_info, &render_info->instance_buffer, &allocation_info->instance_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    return result_success;
-}
-
-result_t set_text_model_message(size_t index, const char* message) {
-    if (index >= NUM_TEXT_MODELS || num_text_model_staging_updates >= NUM_TEXT_MODELS) {
-        return result_failure;
-    }
-
-    uint32_t num_glyphs = (uint32_t)strlen(message);
-
-    text_glyph_instance_t instances[num_glyphs];
-    for (uint32_t i = 0; i < num_glyphs; i++) {
-        int32_t glyph_char = message[i];
-        
-        vec2s glyph_tex_coord = {{ (float)(glyph_char*TEXT_GLYPH_SIZE % (int32_t)text_glyph_image_width), (float)(TEXT_GLYPH_SIZE*(glyph_char*TEXT_GLYPH_SIZE / (int32_t)text_glyph_image_width)) }};
-        glyph_tex_coord.x /= (float)text_glyph_image_width;
-        glyph_tex_coord.y /= (float)text_glyph_image_height;
-
-        instances[i] = (text_glyph_instance_t) {
-            .position = {{ (float)i/(float)TEXT_GLYPH_SIZE, 0.0f }},
-            .tex_coord = {{ glyph_tex_coord.x, glyph_tex_coord.y }},
-        };
-    }
-
-    if (write_to_buffer(text_model_staging_allocations[index], sizeof(instances), instances) != result_success) {
-        return result_failure;
-    }
-
-    text_model_render_infos[index].num_instances = num_glyphs;
-    text_model_staging_updates[num_text_model_staging_updates++] = text_model_staging_buffers[index];
-    
-    return result_success;
-}
+alignas(64) static graphics_pipeline_render_info_t pipeline_info;
 
 const char* init_text_pipeline(void) {
     if (create_descriptor_set(
@@ -117,7 +33,7 @@ const char* init_text_pipeline(void) {
                 .image = {
                     .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                     .imageView = texture_image_views[1],
-                    .sampler = voxel_region_texture_image_sampler
+                    .sampler = text_texture_image_sampler
                 }
             }
         },
@@ -229,27 +145,6 @@ const char* init_text_pipeline(void) {
     return NULL;
 }
 
-void transfer_text_pipeline(VkCommandBuffer command_buffer) {
-    for (size_t i = 0; i < num_text_model_staging_updates; i++) {
-        const text_model_render_info_t* render_info = &text_model_render_infos[i];
-        VkDeviceSize num_bytes = render_info->num_instances * sizeof(text_glyph_instance_t);
-        
-        vkCmdCopyBuffer(command_buffer, text_model_staging_updates[i], render_info->instance_buffer, 1, &(VkBufferCopy) {
-            .size = num_bytes
-        });
-
-        vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 0, NULL, 1, &(VkBufferMemoryBarrier) {
-            DEFAULT_VK_BUFFER_MEMORY_BARRIER,
-            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-            .dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-            .buffer = render_info->instance_buffer,
-            .size = num_bytes
-        }, 0, NULL);
-    }
-
-    num_text_model_staging_updates = 0;
-}
-
 void draw_text_pipeline(VkCommandBuffer command_buffer) {
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline);
     vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_info.pipeline_layout, 0, 1, &pipeline_info.descriptor_set, 0, NULL);
@@ -269,20 +164,10 @@ void draw_text_pipeline(VkCommandBuffer command_buffer) {
         });
 
         vkCmdBindIndexBuffer(command_buffer, text_glyph_render_info.index_buffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(command_buffer, text_glyph_render_info.num_indices, model_render_info->num_instances, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffer, NUM_TEXT_GLYPH_INDICES, model_render_info->num_instances, 0, 0, 0);
     }
 }
 
 void term_text_pipeline(void) {
-    for (size_t i = 0; i < NUM_TEXT_MODELS; i++) {
-        if (text_model_render_infos[i].instance_buffer != VK_NULL_HANDLE) {
-            vmaDestroyBuffer(allocator, text_model_render_infos[i].instance_buffer, text_model_allocation_infos[i].instance_allocation);
-            vmaDestroyBuffer(allocator, text_model_staging_buffers[i], text_model_staging_allocations[i]);
-        }
-    }
-
-    vkDestroyPipeline(device, pipeline_info.pipeline, NULL);
-    vkDestroyPipelineLayout(device, pipeline_info.pipeline_layout, NULL);
-    vkDestroyDescriptorPool(device, pipeline_info.descriptor_pool, NULL);
-    vkDestroyDescriptorSetLayout(device, pipeline_info.descriptor_set_layout, NULL);
+    destroy_graphics_pipeline(&pipeline_info);
 }

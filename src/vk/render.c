@@ -7,6 +7,7 @@
 #include "result.h"
 #include "util.h"
 #include "defaults.h"
+#include "text_assets.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -191,7 +192,7 @@ const char* draw_frame(float delta) {
         return "Failed to begin writing to command buffer\n";
     }
 
-    transfer_graphics_pipelines(command_buffer);
+    update_text_assets(command_buffer);
 
     VkViewport viewport = {
         .x = 0.0f,

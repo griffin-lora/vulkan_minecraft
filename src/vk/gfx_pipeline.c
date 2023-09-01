@@ -16,10 +16,6 @@ const char* init_graphics_pipelines() {
     return NULL;
 }
 
-void transfer_graphics_pipelines(VkCommandBuffer command_buffer) {
-    transfer_text_pipeline(command_buffer);
-}
-
 void draw_graphics_pipelines(VkCommandBuffer command_buffer) {
     draw_voxel_color_pipeline(command_buffer);
     draw_text_pipeline(command_buffer);
@@ -28,4 +24,11 @@ void draw_graphics_pipelines(VkCommandBuffer command_buffer) {
 void term_graphics_pipelines() {
     term_voxel_color_pipeline();
     term_text_pipeline();
+}
+
+void destroy_graphics_pipeline(const graphics_pipeline_render_info_t* info) {
+    vkDestroyPipeline(device, info->pipeline, NULL);
+    vkDestroyPipelineLayout(device, info->pipeline_layout, NULL);
+    vkDestroyDescriptorPool(device, info->descriptor_pool, NULL);
+    vkDestroyDescriptorSetLayout(device, info->descriptor_set_layout, NULL);
 }

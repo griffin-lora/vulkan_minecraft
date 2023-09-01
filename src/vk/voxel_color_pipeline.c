@@ -187,8 +187,5 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
 }
 
 void term_voxel_color_pipeline(void) {
-    vkDestroyPipeline(device, pipeline_info.pipeline, NULL);
-    vkDestroyPipelineLayout(device, pipeline_info.pipeline_layout, NULL);
-    vkDestroyDescriptorPool(device, pipeline_info.descriptor_pool, NULL);
-    vkDestroyDescriptorSetLayout(device, pipeline_info.descriptor_set_layout, NULL);
+    destroy_graphics_pipeline(&pipeline_info);
 }
