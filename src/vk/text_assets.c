@@ -25,8 +25,8 @@ static uint32_t text_glyph_image_height;
 VkSampler text_texture_image_sampler;
 
 typedef struct {
-    staging_t vertex_staging;
-    staging_t index_staging;
+    staging_t glyph_vertex_staging;
+    staging_t glyph_index_staging;
 } text_assets_info_t;
 
 text_assets_info_t* info;
@@ -62,11 +62,11 @@ const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint
         0, 1, 2, 2, 3, 0
     };
     
-    if (begin_buffer(&vertex_buffer_create_info, NUM_TEXT_GLYPH_VERTICES, sizeof(text_glyph_vertex_t), text_glyph_vertices, &info->vertex_staging, &text_glyph_render_info.vertex_buffer, &text_glyph_allocation_info.vertex_allocation) != result_success) {
+    if (begin_buffer(&vertex_buffer_create_info, NUM_TEXT_GLYPH_VERTICES, sizeof(text_glyph_vertex_t), text_glyph_vertices, &info->glyph_vertex_staging, &text_glyph_render_info.vertex_buffer, &text_glyph_allocation_info.vertex_allocation) != result_success) {
         return "Failed to begin creating vertex buffer\n";
     }
 
-    if (begin_buffer(&index_buffer_create_info, NUM_TEXT_GLYPH_INDICES, sizeof(uint16_t), text_glyph_indices, &info->index_staging, &text_glyph_render_info.index_buffer, &text_glyph_allocation_info.index_allocation) != result_success) {
+    if (begin_buffer(&index_buffer_create_info, NUM_TEXT_GLYPH_INDICES, sizeof(uint16_t), text_glyph_indices, &info->glyph_index_staging, &text_glyph_render_info.index_buffer, &text_glyph_allocation_info.index_allocation) != result_success) {
         return "Failed to begin creating index buffer\n";
     }
 
@@ -74,17 +74,17 @@ const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint
 }
 
 void transfer_text_assets(VkCommandBuffer command_buffer) {
-    vkCmdCopyBuffer(command_buffer, info->vertex_staging.buffer, text_glyph_render_info.vertex_buffer, 1, &(VkBufferCopy) {
+    vkCmdCopyBuffer(command_buffer, info->glyph_vertex_staging.buffer, text_glyph_render_info.vertex_buffer, 1, &(VkBufferCopy) {
         .size = sizeof(text_glyph_vertex_t)*NUM_TEXT_GLYPH_VERTICES
     });
-    vkCmdCopyBuffer(command_buffer, info->index_staging.buffer, text_glyph_render_info.index_buffer, 1, &(VkBufferCopy) {
+    vkCmdCopyBuffer(command_buffer, info->glyph_index_staging.buffer, text_glyph_render_info.index_buffer, 1, &(VkBufferCopy) {
         .size = sizeof(uint16_t)*NUM_TEXT_GLYPH_INDICES
     });
 }
 
 void end_text_assets(void) {
-    vmaDestroyBuffer(allocator, info->vertex_staging.buffer, info->vertex_staging.allocation);
-    vmaDestroyBuffer(allocator, info->index_staging.buffer, info->index_staging.allocation);
+    vmaDestroyBuffer(allocator, info->glyph_vertex_staging.buffer, info->glyph_vertex_staging.allocation);
+    vmaDestroyBuffer(allocator, info->glyph_index_staging.buffer, info->glyph_index_staging.allocation);
 
     free(info);
 }

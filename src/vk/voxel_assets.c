@@ -22,7 +22,7 @@ typedef struct {
     staging_t face_vertex_stagings[NUM_VOXEL_FACE_TYPES];
     staging_t face_index_stagings[NUM_VOXEL_FACE_TYPES];
 
-    staging_t voxel_face_model_staging_arrays[NUM_VOXEL_FACE_TYPES][NUM_VOXEL_REGIONS];
+    staging_t face_model_staging_arrays[NUM_VOXEL_FACE_TYPES][NUM_VOXEL_REGIONS];
 } voxel_assets_info_t;
 
 static voxel_assets_info_t* info;
@@ -105,7 +105,7 @@ const char* begin_voxel_assets(float max_anistropy, uint32_t num_mip_levels) {
             }, &face_instance_arrays);
 
             for (size_t j = 0; j < NUM_VOXEL_FACE_TYPES; j++) {
-                if (begin_voxel_face_model_info(&face_instance_arrays.arrays[j], &info->voxel_face_model_staging_arrays[j][i], &voxel_face_model_render_info_arrays[j][i], &voxel_face_model_allocation_info_arrays[j][i]) != result_success) {
+                if (begin_voxel_face_model_info(&face_instance_arrays.arrays[j], &info->face_model_staging_arrays[j][i], &voxel_face_model_render_info_arrays[j][i], &voxel_face_model_allocation_info_arrays[j][i]) != result_success) {
                     return "Failed to begin creating voxel region info\n";
                 }
             }
@@ -131,7 +131,7 @@ void transfer_voxel_assets(VkCommandBuffer command_buffer) {
         });
 
         const voxel_face_model_render_info_t* model_render_infos = voxel_face_model_render_info_arrays[i];
-        const staging_t* model_stagings = info->voxel_face_model_staging_arrays[i];
+        const staging_t* model_stagings = info->face_model_staging_arrays[i];
 
         for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
             const voxel_face_model_render_info_t* model_render_info = &model_render_infos[j];
@@ -150,7 +150,7 @@ void end_voxel_assets() {
         vmaDestroyBuffer(allocator, info->face_vertex_stagings[i].buffer, info->face_vertex_stagings[i].allocation);
         vmaDestroyBuffer(allocator, info->face_index_stagings[i].buffer, info->face_index_stagings[i].allocation);
 
-        const staging_t* model_statings = info->voxel_face_model_staging_arrays[i];
+        const staging_t* model_statings = info->face_model_staging_arrays[i];
 
         for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
             const staging_t* staging = &model_statings[j];

@@ -15,11 +15,11 @@ void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size
     float gain = 0.4f;
     int octaves = 6;
 
-    for (uint8_t x = 0; x < VOXEL_REGION_SIZE; x++)
-    for (uint8_t z = 0; z < VOXEL_REGION_SIZE; z++) {
+    for (size_t x = 0; x < VOXEL_REGION_SIZE; x++)
+    for (size_t z = 0; z < VOXEL_REGION_SIZE; z++) {
         float height = amplitude * ((stb_perlin_fbm_noise3((float)(x + region_x)*frequency, (float)region_y, (float)(z + region_z)*frequency, lacunarity, gain, octaves) + 1.0f) / 2.0f);
-        uint32_t world_height = (uint32_t)height;
-        for (uint32_t y = 0; y < VOXEL_REGION_SIZE; y++) {
+        size_t world_height = (size_t)height;
+        for (size_t y = 0; y < VOXEL_REGION_SIZE; y++) {
             voxel_type_t* type = &voxel_types->types[x][y][z];
 
             if (x == 15 && z == 15) {
@@ -87,9 +87,9 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
 
     current_voxel_face_instance_chunk_info_t current_chunk_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
 
-    for (uint8_t x = 0; x < VOXEL_REGION_SIZE; x++)
-    for (uint8_t y = 0; y < VOXEL_REGION_SIZE; y++)
-    for (uint8_t z = 0; z < VOXEL_REGION_SIZE; z++) {
+    for (size_t x = 0; x < VOXEL_REGION_SIZE; x++)
+    for (size_t y = 0; y < VOXEL_REGION_SIZE; y++)
+    for (size_t z = 0; z < VOXEL_REGION_SIZE; z++) {
         voxel_type_t type = voxel_types->types[x][y][z];
         if (type == voxel_type_air) {
             continue;
@@ -151,7 +151,7 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
             }
 
             add_face_instance((voxel_face_instance_t) {
-                .position = { x, y, z },
+                .position = { (uint8_t)x, (uint8_t)y, (uint8_t)z },
                 .texture_array_index = get_texture_array_index(type, i)
             }, instance_array, current_chunk_info);
         }
