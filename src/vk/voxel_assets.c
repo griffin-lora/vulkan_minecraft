@@ -74,8 +74,6 @@ const char* begin_voxel_assets(float max_anistropy, uint32_t num_mip_levels) {
         free(mesh->indices);
     }
 
-    #define NUM_XZ_VOXEL_REGIONS 8
-
     voxel_region_voxel_type_array_t (*voxel_type_arrays)[NUM_XZ_VOXEL_REGIONS] = memalign(64, NUM_VOXEL_REGIONS*sizeof(voxel_region_voxel_type_array_t));
     memset(voxel_type_arrays, voxel_type_air, NUM_VOXEL_REGIONS*sizeof(voxel_region_voxel_type_array_t));
 
@@ -111,8 +109,6 @@ const char* begin_voxel_assets(float max_anistropy, uint32_t num_mip_levels) {
             }
         }
     }
-
-    #undef VOXEL_REGIONS_SIZE
 
     free(voxel_type_arrays);
 
