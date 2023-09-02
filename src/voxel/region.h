@@ -5,7 +5,7 @@
 #include "result.h"
 #include "vk/gfx_core.h"
 
-#define VOXEL_REGION_SIZE 32
+#define VOXEL_REGION_SIZE 256
 
 typedef struct {
     // types[x][y][z]
