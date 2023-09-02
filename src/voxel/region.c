@@ -99,57 +99,6 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
             voxel_face_instance_array_t* instance_array = &instance_arrays->arrays[i];
             current_voxel_face_instance_chunk_info_t* current_chunk_info = &current_chunk_infos[i];
 
-            switch (i) {
-                case CUBE_VOXEL_FACE_TYPE_FRONT:
-                    if (x + 1u < VOXEL_REGION_SIZE && voxel_types->types[x + 1][y][z] != voxel_type_air) {
-                        continue;
-                    }
-                    if (x + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->front->types != NULL && voxel_type_arrays->front->types[0][y][z] != voxel_type_air) {
-                        continue;
-                    }
-                    break;
-                case CUBE_VOXEL_FACE_TYPE_BACK:
-                    if (x - 1u < VOXEL_REGION_SIZE && voxel_types->types[x - 1][y][z] != voxel_type_air) {
-                        continue;
-                    }
-                    if (x - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->back->types != NULL && voxel_type_arrays->back->types[VOXEL_REGION_SIZE - 1][y][z] != voxel_type_air) {
-                        continue;
-                    }
-                    break;
-                case CUBE_VOXEL_FACE_TYPE_TOP:
-                    if (y + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y + 1][z] != voxel_type_air) {
-                        continue;
-                    }
-                    if (y + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->top->types != NULL && voxel_type_arrays->top->types[x][0][z] != voxel_type_air) {
-                        continue;
-                    }
-                    break;
-                case CUBE_VOXEL_FACE_TYPE_BOTTOM:
-                    if (y - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y - 1][z] != voxel_type_air) {
-                        continue;
-                    }
-                    if (y - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->bottom->types != NULL && voxel_type_arrays->bottom->types[x][VOXEL_REGION_SIZE - 1][z] != voxel_type_air) {
-                        continue;
-                    }
-                    break;
-                case CUBE_VOXEL_FACE_TYPE_RIGHT:
-                    if (z + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z + 1] != voxel_type_air) {
-                        continue;
-                    }
-                    if (z + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->right->types != NULL && voxel_type_arrays->right->types[x][y][0] != voxel_type_air) {
-                        continue;
-                    }
-                    break;
-                case CUBE_VOXEL_FACE_TYPE_LEFT:
-                    if (z - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z - 1] != voxel_type_air) {
-                        continue;
-                    }
-                    if (z - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->left->types != NULL && voxel_type_arrays->left->types[x][y][VOXEL_REGION_SIZE - 1] != voxel_type_air) {
-                        continue;
-                    }
-                    break;
-            }
-
             add_face_instance((voxel_face_instance_t) {
                 .position = { (uint8_t)x, (uint8_t)y, (uint8_t)z },
                 .texture_array_index = get_texture_array_index(type, i)
