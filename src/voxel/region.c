@@ -149,11 +149,11 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
                     }
                     break;
             }
-
-            add_face_instance((voxel_face_instance_t) {
+            
+            add_face_instance(create_voxel_face_instance((voxel_face_instance_create_info_t) {
                 .position = { (uint8_t)x, (uint8_t)y, (uint8_t)z },
                 .texture_array_index = get_texture_array_index(type, i)
-            }, instance_array, current_chunk_info);
+            }), instance_array, current_chunk_info);
         }
     }
 }

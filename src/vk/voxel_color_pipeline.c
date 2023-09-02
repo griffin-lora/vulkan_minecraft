@@ -122,7 +122,7 @@ const char* init_voxel_color_pipeline(void) {
                     .binding = 0,
                     .location = 0,
                     .format = VK_FORMAT_R32_UINT,
-                    .offset = offsetof(voxel_face_instance_t, info)
+                    .offset = 0
                 },
                 {
                     .binding = 1,
