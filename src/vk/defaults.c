@@ -21,7 +21,7 @@ const VkPipelineDepthStencilStateCreateInfo default_depth_stencil_create_info = 
     .depthTestEnable = VK_TRUE,
     .depthWriteEnable = VK_TRUE,
     .depthCompareOp = VK_COMPARE_OP_LESS,
-    .depthBoundsTestEnable = VK_FALSE, // TODO: Use this?
+    .depthBoundsTestEnable = VK_FALSE,
     .stencilTestEnable = VK_FALSE
 };
 
