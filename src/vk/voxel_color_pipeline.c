@@ -3,13 +3,12 @@
 #include "gfx_core.h"
 #include "asset.h"
 #include "util.h"
-#include "mesh.h"
 #include "defaults.h"
 #include "render.h"
 #include "gfx_pipeline.h"
 #include "camera.h"
 #include "voxel_assets.h"
-#include "voxel/face_instance.h"
+#include "voxel/vertex.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -102,39 +101,22 @@ const char* init_voxel_color_pipeline(void) {
         .pVertexInputState = &(VkPipelineVertexInputStateCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         
-            .vertexBindingDescriptionCount = 2,
-            .pVertexBindingDescriptions = (VkVertexInputBindingDescription[2]) {
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions = (VkVertexInputBindingDescription[1]) {
                 {
                     .binding = 0,
-                    .stride = sizeof(voxel_face_instance_t),
-                    .inputRate = VK_VERTEX_INPUT_RATE_INSTANCE
-                },
-                {
-                    .binding = 1,
-                    .stride = sizeof(voxel_face_vertex_t),
+                    .stride = sizeof(voxel_vertex_t),
                     .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
                 }
             },
 
-            .vertexAttributeDescriptionCount = 3,
-            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[3]) {
+            .vertexAttributeDescriptionCount = 1,
+            .pVertexAttributeDescriptions = (VkVertexInputAttributeDescription[1]) {
                 {
                     .binding = 0,
                     .location = 0,
                     .format = VK_FORMAT_R32_UINT,
                     .offset = 0
-                },
-                {
-                    .binding = 1,
-                    .location = 1,
-                    .format = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset = offsetof(voxel_face_vertex_t, position)
-                },
-                {
-                    .binding = 1,
-                    .location = 2,
-                    .format = VK_FORMAT_R32G32_SFLOAT,
-                    .offset = offsetof(voxel_face_vertex_t, tex_coord)
                 }
             }
         },
@@ -163,29 +145,18 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
 
     vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, view_projection), sizeof(push_constants.view_projection), &camera_view_projection);
 
-    for (size_t i = 0; i < NUM_VOXEL_FACE_TYPES; i++) {
-        const voxel_face_type_render_info_t* type_render_info = &voxel_face_type_render_infos[i];
-        vkCmdBindIndexBuffer(command_buffer, type_render_info->index_buffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdBindVertexBuffers(command_buffer, 1, 1, &type_render_info->vertex_buffer, (VkDeviceSize[1]) { 0 });
+    for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
+        const voxel_region_render_info_t* render_info = &voxel_region_render_infos[i];
 
-        uint32_t num_indices = type_render_info->num_indices;
-
-        const voxel_face_model_render_info_t* model_render_infos = voxel_face_model_render_info_arrays[i];
-
-        for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
-            const voxel_face_model_render_info_t* model_render_info = &model_render_infos[j];
-
-            if (model_render_info->num_instances == 0) {
-                continue;
-            }
-
-            const voxel_region_render_info_t* region_render_info = &voxel_region_render_infos[j];
-            vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, region_position), sizeof(push_constants.region_position), &region_render_info->position);
-
-            vkCmdBindVertexBuffers(command_buffer, 0, 1, &model_render_info->instance_buffer, (VkDeviceSize[1]) { 0 });
-
-            vkCmdDrawIndexed(command_buffer, num_indices, model_render_info->num_instances, 0, 0, 0);
+        if (render_info->num_vertices == 0) {
+            continue;
         }
+
+
+        vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, region_position), sizeof(push_constants.region_position), &render_info->position);
+
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, &render_info->vertex_buffer, (VkDeviceSize[1]) { 0 });
+        vkCmdDraw(command_buffer, render_info->num_vertices, 1, 0, 0);
     }
 }
 

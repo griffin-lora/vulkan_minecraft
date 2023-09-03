@@ -1,6 +1,5 @@
 #include "asset.h"
 #include "util.h"
-#include "mesh.h"
 #include "core.h"
 #include "gfx_core.h"
 #include "voxel_color_pipeline.h"
@@ -8,7 +7,7 @@
 #include "defaults.h"
 #include "voxel_assets.h"
 #include "text_assets.h"
-#include "voxel/face_instance.h"
+#include "voxel/vertex.h"
 #include "voxel/region.h"
 #include <malloc.h>
 #include <string.h>

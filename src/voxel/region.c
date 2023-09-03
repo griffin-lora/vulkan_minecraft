@@ -1,6 +1,6 @@
 #include "region.h"
 #include "util.h"
-#include "cube.h"
+#include "face.h"
 #include "vk/core.h"
 #include "vk/defaults.h"
 #include <malloc.h>
@@ -46,12 +46,12 @@ void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size
     }
 }
 
-static uint8_t get_texture_array_index(voxel_type_t voxel_type, size_t face_type) {
+static uint8_t get_texture_array_index(voxel_type_t voxel_type, voxel_face_t face) {
     switch (voxel_type) {
-        case voxel_type_grass: switch (face_type) {
+        case voxel_type_grass: switch (face) {
             default: return 4;
-            case CUBE_VOXEL_FACE_TYPE_TOP: return 0;
-            case CUBE_VOXEL_FACE_TYPE_BOTTOM: return 2;
+            case voxel_face_top: return 0;
+            case voxel_face_bottom: return 2;
         }
         case voxel_type_stone: return 1;
         case voxel_type_dirt: return 2;
@@ -60,32 +60,35 @@ static uint8_t get_texture_array_index(voxel_type_t voxel_type, size_t face_type
 }
 
 typedef struct {
-    uint32_t num_instances;
-    voxel_face_instance_chunk_t* chunk;
-} current_voxel_face_instance_chunk_info_t;
+    uint32_t num_vertices;
+    voxel_vertex_chunk_t* chunk;
+} current_voxel_vertex_chunk_info_t;
 
-static void add_face_instance(voxel_face_instance_t instance, voxel_face_instance_array_t* instance_array, current_voxel_face_instance_chunk_info_t* current_chunk_info) {
-    if (instance_array->num_instances == 0) {
-        current_chunk_info->chunk = memalign(64, sizeof(voxel_face_instance_chunk_t));
-        instance_array->chunk = current_chunk_info->chunk;
+static void add_vertices(size_t num_vertices, voxel_vertex_t vertex, voxel_vertex_array_t* vertex_array, current_voxel_vertex_chunk_info_t* current_chunk_info) {
+    // TODO: Don't do this
+    for (size_t i = 0; i < num_vertices; i++) {
+        if (vertex_array->num_vertices == 0) {
+            current_chunk_info->chunk = memalign(64, sizeof(voxel_vertex_chunk_t));
+            vertex_array->chunk = current_chunk_info->chunk;
+        }
+
+        if (current_chunk_info->num_vertices >= NUM_VOXEL_VERTEX_CHUNK_MEMBERS) {
+            voxel_vertex_chunk_t* new_chunk = memalign(64, sizeof(voxel_vertex_chunk_t));
+            current_chunk_info->chunk->next = new_chunk;
+            current_chunk_info->chunk = new_chunk;
+
+            current_chunk_info->num_vertices = 0;
+        }
+
+        vertex_array->num_vertices++;
+        current_chunk_info->chunk->vertices[current_chunk_info->num_vertices++] = vertex;
     }
-
-    if (current_chunk_info->num_instances >= NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS) {
-        voxel_face_instance_chunk_t* new_chunk = memalign(64, sizeof(voxel_face_instance_chunk_t));
-        current_chunk_info->chunk->next = new_chunk;
-        current_chunk_info->chunk = new_chunk;
-
-        current_chunk_info->num_instances = 0;
-    }
-
-    instance_array->num_instances++;
-    current_chunk_info->chunk->face_instances[current_chunk_info->num_instances++] = instance;
 }
 
-void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* voxel_type_arrays, voxel_face_instance_arrays_t* instance_arrays) {
+void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_type_arrays, voxel_vertex_array_t* vertex_array) {
     const voxel_region_voxel_type_array_t* voxel_types = voxel_type_arrays->center;
 
-    current_voxel_face_instance_chunk_info_t current_chunk_infos[NUM_VOXEL_FACE_TYPES] = { 0 };
+    current_voxel_vertex_chunk_info_t current_chunk_info = { 0 };
 
     for (size_t x = 0; x < VOXEL_REGION_SIZE; x++)
     for (size_t y = 0; y < VOXEL_REGION_SIZE; y++)
@@ -95,12 +98,9 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
             continue;
         }
 
-        for (size_t i = CUBE_VOXEL_TYPE_BEGIN; i < CUBE_VOXEL_TYPE_END; i++) {
-            voxel_face_instance_array_t* instance_array = &instance_arrays->arrays[i];
-            current_voxel_face_instance_chunk_info_t* current_chunk_info = &current_chunk_infos[i];
-
+        for (voxel_type_t i = CUBE_VOXEL_TYPE_BEGIN; i < CUBE_VOXEL_TYPE_END; i++) {
             switch (i) {
-                case CUBE_VOXEL_FACE_TYPE_FRONT:
+                case voxel_face_front:
                     if (x + 1u < VOXEL_REGION_SIZE && voxel_types->types[x + 1][y][z] != voxel_type_air) {
                         continue;
                     }
@@ -108,7 +108,7 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
                         continue;
                     }
                     break;
-                case CUBE_VOXEL_FACE_TYPE_BACK:
+                case voxel_face_back:
                     if (x - 1u < VOXEL_REGION_SIZE && voxel_types->types[x - 1][y][z] != voxel_type_air) {
                         continue;
                     }
@@ -116,7 +116,7 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
                         continue;
                     }
                     break;
-                case CUBE_VOXEL_FACE_TYPE_TOP:
+                case voxel_face_top:
                     if (y + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y + 1][z] != voxel_type_air) {
                         continue;
                     }
@@ -124,7 +124,7 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
                         continue;
                     }
                     break;
-                case CUBE_VOXEL_FACE_TYPE_BOTTOM:
+                case voxel_face_bottom:
                     if (y - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y - 1][z] != voxel_type_air) {
                         continue;
                     }
@@ -132,7 +132,7 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
                         continue;
                     }
                     break;
-                case CUBE_VOXEL_FACE_TYPE_RIGHT:
+                case voxel_face_right:
                     if (z + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z + 1] != voxel_type_air) {
                         continue;
                     }
@@ -140,7 +140,7 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
                         continue;
                     }
                     break;
-                case CUBE_VOXEL_FACE_TYPE_LEFT:
+                case voxel_face_left:
                     if (z - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z - 1] != voxel_type_air) {
                         continue;
                     }
@@ -150,23 +150,24 @@ void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* v
                     break;
             }
             
-            add_face_instance(create_voxel_face_instance((voxel_face_instance_create_info_t) {
-                .position = { (uint8_t)x, (uint8_t)y, (uint8_t)z },
-                .texture_array_index = get_texture_array_index(type, i)
-            }), instance_array, current_chunk_info);
+            add_vertices(NUM_CUBE_VOXEL_FACE_VERTICES, create_voxel_vertex((voxel_vertex_create_info_t) {
+                .texture_array_index = get_texture_array_index(type, i),
+                .face = i,
+                .position = { (uint8_t)x, (uint8_t)y, (uint8_t)z }
+            }), vertex_array, &current_chunk_info);
         }
     }
 }
 
-result_t begin_voxel_face_model_info(voxel_face_instance_array_t* instance_array, staging_t* staging, voxel_face_model_render_info_t* render_info, voxel_face_model_allocation_info_t* allocation_info) {
-    uint32_t num_instances = instance_array->num_instances;
-    if (num_instances == 0) {
+result_t begin_voxel_region_info(voxel_vertex_array_t* vertex_array, staging_t* staging, voxel_region_render_info_t* render_info, voxel_region_allocation_info_t* allocation_info) {
+    uint32_t num_vertices = vertex_array->num_vertices;
+    if (num_vertices == 0) {
         return result_success;
     }
 
-    render_info->num_instances = num_instances;
+    render_info->num_vertices = num_vertices;
 
-    uint32_t num_array_bytes = num_instances*sizeof(voxel_face_instance_t);
+    uint32_t num_array_bytes = num_vertices*sizeof(voxel_vertex_t);
 
     if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
         DEFAULT_VK_STAGING_BUFFER,
@@ -178,14 +179,14 @@ result_t begin_voxel_face_model_info(voxel_face_instance_array_t* instance_array
     if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
         DEFAULT_VK_VERTEX_BUFFER,
         .size = num_array_bytes
-    }, &device_allocation_create_info, &render_info->instance_buffer, &allocation_info->instance_allocation, NULL) != VK_SUCCESS) {
+    }, &device_allocation_create_info, &render_info->vertex_buffer, &allocation_info->vertex_allocation, NULL) != VK_SUCCESS) {
         return result_failure;
     }
 
-    uint32_t num_chunks = div_ceil_uint32(num_instances, NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS); // Integer ceiling division
-    uint32_t num_last_chunk_instances = num_instances % NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS;
-    if (num_last_chunk_instances == 0) {
-        num_last_chunk_instances = NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS;
+    uint32_t num_chunks = div_ceil_uint32(num_vertices, NUM_VOXEL_VERTEX_CHUNK_MEMBERS); // Integer ceiling division
+    uint32_t num_last_chunk_vertices = num_vertices % NUM_VOXEL_VERTEX_CHUNK_MEMBERS;
+    if (num_last_chunk_vertices == 0) {
+        num_last_chunk_vertices = NUM_VOXEL_VERTEX_CHUNK_MEMBERS;
     }
 
     void* mapped_data;
@@ -193,12 +194,12 @@ result_t begin_voxel_face_model_info(voxel_face_instance_array_t* instance_array
         return result_failure;
     }
 
-    voxel_face_instance_chunk_t* chunk = instance_array->chunk;
+    voxel_vertex_chunk_t* chunk = vertex_array->chunk;
     for (uint32_t j = 0; j < num_chunks; j++) {
-        uint32_t num_chunk_instances = j == num_chunks - 1u ? num_last_chunk_instances : NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS;
-        memcpy(mapped_data + j*sizeof(chunk->face_instances), chunk->face_instances, num_chunk_instances*sizeof(voxel_face_instance_t));
+        uint32_t num_chunk_vertices = j == num_chunks - 1u ? num_last_chunk_vertices : NUM_VOXEL_VERTEX_CHUNK_MEMBERS;
+        memcpy(mapped_data + j*sizeof(chunk->vertices), chunk->vertices, num_chunk_vertices*sizeof(voxel_vertex_t));
 
-        voxel_face_instance_chunk_t* new_chunk = chunk->next;
+        voxel_vertex_chunk_t* new_chunk = chunk->next;
         free(chunk);
         chunk = new_chunk;
     }

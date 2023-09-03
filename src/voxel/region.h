@@ -1,6 +1,6 @@
 #pragma once
 #include "type.h"
-#include "face_instance.h"
+#include "vertex.h"
 #include "infos.h"
 #include "result.h"
 #include "vk/gfx_core.h"
@@ -22,25 +22,21 @@ typedef struct {
     voxel_region_voxel_type_array_t* left;
 } voxel_region_voxel_type_arrays_t;
 
-#define NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS 4096
+#define NUM_VOXEL_VERTEX_CHUNK_MEMBERS 4096
 
-typedef struct voxel_face_instance_chunk voxel_face_instance_chunk_t;
+typedef struct voxel_vertex_chunk voxel_vertex_chunk_t;
 
-struct voxel_face_instance_chunk {
-    voxel_face_instance_t face_instances[NUM_VOXEL_FACE_INSTANCE_CHUNK_MEMBERS];
-    voxel_face_instance_chunk_t* next;
+struct voxel_vertex_chunk {
+    voxel_vertex_t vertices[NUM_VOXEL_VERTEX_CHUNK_MEMBERS];
+    voxel_vertex_chunk_t* next;
 };
 
 typedef struct {
-    uint32_t num_instances;
-    voxel_face_instance_chunk_t* chunk;
-} voxel_face_instance_array_t;
-
-typedef struct {
-    voxel_face_instance_array_t arrays[NUM_VOXEL_FACE_TYPES];
-} voxel_face_instance_arrays_t;
+    uint32_t num_vertices;
+    voxel_vertex_chunk_t* chunk;
+} voxel_vertex_array_t;
 
 void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size_t region_z, voxel_region_voxel_type_array_t* voxel_types);
-void create_voxel_face_instance_arrays(const voxel_region_voxel_type_arrays_t* voxel_type_arrays, voxel_face_instance_arrays_t* instance_arrays);
+void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_type_arrays, voxel_vertex_array_t* vertex_array);
 
-result_t begin_voxel_face_model_info(voxel_face_instance_array_t* instance_array, staging_t* staging, voxel_face_model_render_info_t* render_info, voxel_face_model_allocation_info_t* allocation_info);
+result_t begin_voxel_region_info(voxel_vertex_array_t* vertex_array, staging_t* staging, voxel_region_render_info_t* render_info, voxel_region_allocation_info_t* allocation_info);

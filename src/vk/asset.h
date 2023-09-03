@@ -1,6 +1,5 @@
 #pragma once
 #include "vk.h"
-#include "mesh.h"
 #include <vk_mem_alloc.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/mat4.h>
