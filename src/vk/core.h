@@ -5,19 +5,10 @@
 
 #define NUM_FRAMES_IN_FLIGHT 2
 
-typedef union {
-    uint32_t data[2];
-    struct {
-        uint32_t graphics;
-        uint32_t presentation;
-    };
-} queue_family_indices_t;
-
 extern GLFWwindow* window;
 extern VkDevice device;
 extern VkPhysicalDevice physical_device;
 extern VmaAllocator allocator;
-extern queue_family_indices_t queue_family_indices;
 extern VkSurfaceFormatKHR surface_format;
 extern VkPresentModeKHR present_mode;
 extern VkSemaphore image_available_semaphores[];

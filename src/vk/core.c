@@ -19,12 +19,20 @@
 #define WIDTH 640
 #define HEIGHT 480
 
+typedef union {
+    uint32_t data[2];
+    struct {
+        uint32_t graphics;
+        uint32_t presentation;
+    };
+} queue_family_indices_t;
+
 alignas(64)
 GLFWwindow* window;
 VkDevice device;
 VkPhysicalDevice physical_device;
 VmaAllocator allocator;
-queue_family_indices_t queue_family_indices;
+static queue_family_indices_t queue_family_indices;
 VkSurfaceFormatKHR surface_format;
 VkPresentModeKHR present_mode;
 VkSemaphore image_available_semaphores[NUM_FRAMES_IN_FLIGHT];
@@ -433,21 +441,17 @@ const char* init_core(void) {
 
     render_multisample_flags = get_max_multisample_flags(&physical_device_properties);
 
-    float queue_priority = 1.0f;
-    VkDeviceQueueCreateInfo queue_create_infos[2];
-    for (size_t i = 0; i < 2; i++) {
-        queue_create_infos[i] = (VkDeviceQueueCreateInfo) {
-            .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
-            .queueFamilyIndex = queue_family_indices.data[i],
-            .queueCount = 1,
-            .pQueuePriorities = &queue_priority
-        };
-    }
-
     if (vkCreateDevice(physical_device, &(VkDeviceCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
         .queueCreateInfoCount = 1,
-        .pQueueCreateInfos = queue_create_infos,
+        .pQueueCreateInfos = (VkDeviceQueueCreateInfo[1]) {
+            {
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = queue_family_indices.graphics,
+                .queueCount = 1,
+                .pQueuePriorities = (float[1]) { 1.0f }
+            }
+        },
         .pEnabledFeatures = &(VkPhysicalDeviceFeatures) {
             .samplerAnisotropy = VK_TRUE
         },
