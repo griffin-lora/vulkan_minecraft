@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "debug_ui.h"
 #include "chrono.h"
+#include "vk/dynamic_assets.h"
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -21,6 +22,12 @@ int main(void) {
         glfwPollEvents();
 
         update_camera(delta);
+
+        msg = update_dynamic_assets();
+        if (msg != NULL) {
+            printf("%s", msg);
+            return 1;
+        }
 
         msg = draw_frame(delta);
         if (msg != NULL) {

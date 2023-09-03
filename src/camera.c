@@ -19,6 +19,7 @@
 // TODO: Fix this
 vec3s camera_position;
 mat4s camera_view_projection;
+bool should_recreate_voxel_regions = true;
 
 static vec3s cam_pos = {{ 15.462208f, 11.152647f, 15.079316f }};
 static vec3s cam_vel = {{ 0.0f, 0.0f, 0.0f }};
@@ -83,6 +84,8 @@ static vec2s get_desired_rotational_velocity(float aspect) {
     return glms_vec2_scale(glms_vec2_sub(rotation_mode_norm_cursor_position, get_norm_cursor_position(aspect, cursor_position)), ROT_SPEED);
 }
 
+static bool r_down = false;
+
 void update_camera(float) {
     float aspect = (float)swap_image_extent.width/(float)swap_image_extent.height;
 
@@ -134,6 +137,15 @@ void update_camera(float) {
     
     camera_view_projection = glms_mat4_mul(projection, view);
     camera_position = cam_pos;
+
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+        if (!r_down) {
+            should_recreate_voxel_regions = true;
+        }
+        r_down = true;
+    } else {
+        r_down = false;
+    }
 
     // printf("%ff, %ff, %ff, %ff, %ff, %ff, %ff, %ff\n", cam_pos.x, cam_pos.y, cam_pos.z, cam_forward.x, cam_forward.y, cam_forward.z, cam_rot.x, cam_rot.y);
 }

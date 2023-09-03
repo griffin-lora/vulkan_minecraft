@@ -9,6 +9,7 @@
 #include "render.h"
 #include "debug_ui.h"
 #include "dynamic_asset_transfer.h"
+#include "dynamic_assets.h"
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
@@ -563,6 +564,8 @@ void term_all(void) {
     }
 
     term_assets();
+    term_dynamic_assets();
+
     term_dynamic_asset_transfer();
 
     vmaDestroyAllocator(allocator);

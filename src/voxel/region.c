@@ -6,7 +6,7 @@
 #include <vk_mem_alloc.h>
 #include <stb_perlin.h>
 
-void create_voxel_region_voxel_type_array(size_t world_x, size_t world_y, size_t world_z, voxel_region_voxel_type_array_t* voxel_types) {
+void create_voxel_region_voxel_type_array(size_t seed, size_t world_x, size_t world_y, size_t world_z, voxel_region_voxel_type_array_t* voxel_types) {
     float amplitude = 20.0f;
     float frequency = 0.01f;
     float lacunarity = 3.0f;
@@ -15,7 +15,7 @@ void create_voxel_region_voxel_type_array(size_t world_x, size_t world_y, size_t
 
     for (size_t x = 0; x < VOXEL_REGION_SIZE; x++)
     for (size_t z = 0; z < VOXEL_REGION_SIZE; z++) {
-        float height = amplitude * ((stb_perlin_fbm_noise3((float)(x + world_x)*frequency, (float)world_y, (float)(z + world_z)*frequency, lacunarity, gain, octaves) + 1.0f) / 2.0f);
+        float height = amplitude * ((stb_perlin_fbm_noise3((float)(seed + x + world_x)*frequency, (float)world_y, (float)(z + world_z)*frequency, lacunarity, gain, octaves) + 1.0f) / 2.0f);
         size_t world_height = (size_t)height;
         for (size_t y = 0; y < VOXEL_REGION_SIZE; y++) {
             voxel_type_t* type = &voxel_types->types[x][y][z];

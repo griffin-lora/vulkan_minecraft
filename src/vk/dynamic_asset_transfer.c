@@ -37,6 +37,10 @@ result_t begin_dynamic_asset_transfer(void) {
 }
 
 result_t end_dynamic_asset_transfer(void) {
+    if (vkEndCommandBuffer(dynamic_asset_transfer_command_buffer) != VK_SUCCESS) {
+        return result_failure;
+    }
+
     // TODO: Use transfer queue
     if (vkQueueSubmit(graphics_queue, 1, &(VkSubmitInfo) {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -49,6 +53,8 @@ result_t end_dynamic_asset_transfer(void) {
     if (vkWaitForFences(device, 1, &dynamic_asset_transfer_fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
         return result_failure;
     }
+
+    vkResetFences(device, 1, &dynamic_asset_transfer_fence);
     
     return result_success;
 }
