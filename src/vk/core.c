@@ -19,26 +19,17 @@
 #define WIDTH 640
 #define HEIGHT 480
 
-typedef union {
-    uint32_t data[2];
-    struct {
-        uint32_t graphics;
-        uint32_t presentation;
-    };
-} queue_family_indices_t;
-
 alignas(64)
 GLFWwindow* window;
 VkDevice device;
 VkPhysicalDevice physical_device;
 VmaAllocator allocator;
-static queue_family_indices_t queue_family_indices;
+queue_family_indices_t queue_family_indices;
 VkSurfaceFormatKHR surface_format;
 VkPresentModeKHR present_mode;
 VkSemaphore image_available_semaphores[NUM_FRAMES_IN_FLIGHT];
 VkSemaphore render_finished_semaphores[NUM_FRAMES_IN_FLIGHT];
 VkFence in_flight_fences[NUM_FRAMES_IN_FLIGHT];
-VkCommandPool command_pool;
 uint32_t num_swapchain_images;
 VkImage* swapchain_images;
 VkImageView* swapchain_image_views;
@@ -510,30 +501,22 @@ const char* init_core(void) {
     if (init_swapchain() != result_success) {
         return "Failed to create swap chain\n";
     }
-
-    if (vkCreateCommandPool(device, &(VkCommandPoolCreateInfo) {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = queue_family_indices.graphics
-    }, NULL, &command_pool) != VK_SUCCESS) {
-        return "Failed to create command pool\n";
-    }
     
     depth_image_format = get_supported_format(3, (VkFormat[3]) { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT }, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     if (depth_image_format == VK_FORMAT_MAX_ENUM) {
         return "Failed to get a supported depth image format\n";
     }
+
+    const char* msg = init_dynamic_asset_transfer();
+    if (msg != NULL) { return msg; }
     
-    const char* msg = init_assets(&physical_device_properties);
+    msg = init_assets(&physical_device_properties);
     if (msg != NULL) { return msg; }
 
     msg = init_frame_rendering();
     if (msg != NULL) { return msg; }
 
     msg = init_graphics_pipelines();
-    if (msg != NULL) { return msg; }
-
-    msg = init_dynamic_asset_transfer();
     if (msg != NULL) { return msg; }
 
     if (init_debug_ui() != result_success) {
@@ -554,8 +537,6 @@ const char* init_core(void) {
 
 void term_all(void) {
     vkDeviceWaitIdle(device);
-
-    vkDestroyCommandPool(device, command_pool, NULL);
     
     term_graphics_pipelines();
     term_frame_rendering();

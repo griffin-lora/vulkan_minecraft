@@ -9,6 +9,7 @@
 #include "text_assets.h"
 #include "voxel/vertex.h"
 #include "voxel/region.h"
+#include "dynamic_asset_transfer.h"
 #include <malloc.h>
 #include <string.h>
 #include <stdalign.h>
@@ -125,7 +126,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     VkCommandBuffer command_buffer;
     if (vkAllocateCommandBuffers(device, &(VkCommandBufferAllocateInfo) {
         DEFAULT_VK_COMMAND_BUFFER,
-        .commandPool = command_pool // TODO: Use separate command pool
+        .commandPool = dynamic_asset_transfer_command_pool
     }, &command_buffer) != VK_SUCCESS) {
         return "Failed to create transfer command buffer\n";
     }
@@ -158,7 +159,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
 
     vkDestroyFence(device, transfer_fence, NULL);
 
-    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+    vkFreeCommandBuffers(device, dynamic_asset_transfer_command_pool, 1, &command_buffer);
 
     end_images(NUM_TEXTURE_IMAGES, image_stagings);
 

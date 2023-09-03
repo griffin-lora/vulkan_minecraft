@@ -3,14 +3,22 @@
 #include "vk/defaults.h"
 #include <stdalign.h>
 
+VkCommandPool dynamic_asset_transfer_command_pool;
 VkCommandBuffer dynamic_asset_transfer_command_buffer;
 static VkFence dynamic_asset_transfer_fence;
 
 const char* init_dynamic_asset_transfer(void) {
+    if (vkCreateCommandPool(device, &(VkCommandPoolCreateInfo) {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = queue_family_indices.graphics
+    }, NULL, &dynamic_asset_transfer_command_pool) != VK_SUCCESS) {
+        return "Failed to create command pool\n";
+    }
+
     if (vkAllocateCommandBuffers(device, &(VkCommandBufferAllocateInfo) {
         DEFAULT_VK_COMMAND_BUFFER,
-        .commandPool = command_pool,
-        .commandBufferCount = 1
+        .commandPool = dynamic_asset_transfer_command_pool
     }, &dynamic_asset_transfer_command_buffer) != VK_SUCCESS) {
         return "Failed to allocate dynamic asset transfer command buffers\n";
     }
@@ -62,4 +70,6 @@ result_t end_dynamic_asset_transfer(void) {
 
 void term_dynamic_asset_transfer(void) {
     vkDestroyFence(device, dynamic_asset_transfer_fence, NULL);
+    
+    vkDestroyCommandPool(device, dynamic_asset_transfer_command_pool, NULL);
 }

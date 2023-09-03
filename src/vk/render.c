@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 VkRenderPass frame_render_pass;
+static VkCommandPool frame_command_pool;
 static VkCommandBuffer frame_command_buffers[NUM_FRAMES_IN_FLIGHT];
 
 static VkImage frame_color_image;
@@ -80,10 +81,18 @@ const char* init_frame_rendering(void) {
     if (init_frame_swapchain_dependents() != result_success) {
         return "Failed to create frame swapchain dependents\n";
     }
+    
+    if (vkCreateCommandPool(device, &(VkCommandPoolCreateInfo) {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = queue_family_indices.graphics
+    }, NULL, &frame_command_pool) != VK_SUCCESS) {
+        return "Failed to create command pool\n";
+    }
 
     if (vkAllocateCommandBuffers(device, &(VkCommandBufferAllocateInfo) {
         DEFAULT_VK_COMMAND_BUFFER,
-        .commandPool = command_pool,
+        .commandPool = frame_command_pool,
         .commandBufferCount = NUM_FRAMES_IN_FLIGHT
     }, frame_command_buffers) != VK_SUCCESS) {
         return "Failed to allocate frame command buffers\n";
@@ -281,6 +290,8 @@ const char* draw_frame(float) {
 
 void term_frame_rendering(void) {
     vkDestroyRenderPass(device, frame_render_pass, NULL);
+
+    vkDestroyCommandPool(device, frame_command_pool, NULL);
 
     term_frame_swapchain_dependents();
 }
