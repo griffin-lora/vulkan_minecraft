@@ -94,7 +94,7 @@ void term_voxel_dynamic_assets(void) {
         voxel_region_allocation_info_t* allocation_infos = voxel_region_allocation_info_arrays[i];
 
         for (size_t j = 0; j < NUM_VOXEL_REGIONS; j++) {
-            destroy_voxel_region_info(&render_infos[i], &allocation_infos[i]);
+            destroy_voxel_region_info(&render_infos[j], &allocation_infos[j]);
         }
     }
 }
