@@ -41,7 +41,7 @@ result_t end_dynamic_asset_transfer(void) {
         return result_failure;
     }
 
-    // TODO: Use transfer queue
+    pthread_mutex_lock(&queue_submit_mutex);
     if (vkQueueSubmit(graphics_queue, 1, &(VkSubmitInfo) {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .commandBufferCount = 1,
@@ -49,6 +49,7 @@ result_t end_dynamic_asset_transfer(void) {
     }, dynamic_asset_transfer_fence) != VK_SUCCESS) {
         return result_failure;
     }
+    pthread_mutex_unlock(&queue_submit_mutex);
 
     if (vkWaitForFences(device, 1, &dynamic_asset_transfer_fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
         return result_failure;

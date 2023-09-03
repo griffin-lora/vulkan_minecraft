@@ -237,6 +237,7 @@ const char* draw_frame(float) {
 
     VkPipelineStageFlags wait_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
+    pthread_mutex_lock(&queue_submit_mutex);
     if (vkQueueSubmit(graphics_queue, 1, &(VkSubmitInfo) {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .waitSemaphoreCount = 1,
@@ -249,6 +250,7 @@ const char* draw_frame(float) {
     }, in_flight_fence) != VK_SUCCESS) {
         return "Failed to submit to graphics queue\n";
     }
+    pthread_mutex_unlock(&queue_submit_mutex);
 
     {
         VkResult result = vkQueuePresentKHR(presentation_queue, &(VkPresentInfoKHR) {

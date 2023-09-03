@@ -2,6 +2,7 @@
 #include "vk.h"
 #include <stdbool.h>
 #include <vk_mem_alloc.h>
+#include <pthread.h>
 
 #define NUM_FRAMES_IN_FLIGHT 2
 
@@ -23,6 +24,7 @@ extern VkSwapchainKHR swapchain;
 extern VkInstance instance;
 extern VkSurfaceKHR surface;
 extern VkExtent2D swap_image_extent;
+extern pthread_mutex_t queue_submit_mutex;
 extern VkQueue graphics_queue;
 extern VkQueue presentation_queue;
 extern bool framebuffer_resized;

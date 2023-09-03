@@ -146,11 +146,14 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         return "Failed to write to transfer command buffer\n";
     }
 
+    pthread_mutex_lock(&queue_submit_mutex);
     vkQueueSubmit(graphics_queue, 1, &(VkSubmitInfo) {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .commandBufferCount = 1,
         .pCommandBuffers = &command_buffer
     }, transfer_fence);
+    pthread_mutex_unlock(&queue_submit_mutex);
+
     vkWaitForFences(device, 1, &transfer_fence, VK_TRUE, UINT64_MAX);
 
     vkDestroyFence(device, transfer_fence, NULL);

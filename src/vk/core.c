@@ -47,6 +47,7 @@ VkSwapchainKHR swapchain;
 VkInstance instance;
 VkSurfaceKHR surface;
 VkExtent2D swap_image_extent;
+pthread_mutex_t queue_submit_mutex = PTHREAD_MUTEX_INITIALIZER;
 VkQueue graphics_queue;
 VkQueue presentation_queue;
 bool framebuffer_resized;
