@@ -1,6 +1,7 @@
 #include "debug_ui.h"
 #include "vk/text_assets.h"
 #include "timing.h"
+#include "camera.h"
 #include <stdio.h>
 
 #define TEXT_MODEL_INDEX 0
@@ -18,12 +19,14 @@ result_t update_debug_ui(microseconds_t frame_time, float delta) {
     char message[NUM_TEXT_MODEL_GLYPHS];
     snprintf(message, NUM_TEXT_MODEL_GLYPHS, 
         "FPS: %f\n"
+        "POS: %f, %f, %f\n"
         "Frame: %ldms\n"
         "In Flight: %ldms\n"
         "Begin Frame: %ldms\n"
         "Write Command Buffer: %ldms\n"
         "End Frame: %ldms\n",
         1.0f/delta,
+        camera_position.x, camera_position.y, camera_position.z,
         get_milliseconds(frame_time),
         get_milliseconds(in_flight_time),
         get_milliseconds(begin_frame_time),
