@@ -8,6 +8,7 @@
 #include "gfx_pipeline.h"
 #include "camera.h"
 #include "voxel_assets.h"
+#include "voxel_dynamic_assets.h"
 #include "voxel/vertex.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
@@ -145,8 +146,11 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
 
     vkCmdPushConstants(command_buffer, pipeline_info.pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, offsetof(push_constants_t, view_projection), sizeof(push_constants.view_projection), &camera_view_projection);
 
+    pthread_mutex_lock(&voxel_dynamic_assets_front_index.mutex);
+    const voxel_region_render_info_t* render_infos = voxel_region_render_info_arrays[voxel_dynamic_assets_front_index.index];
+
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
-        const voxel_region_render_info_t* render_info = &voxel_region_render_infos[i];
+        const voxel_region_render_info_t* render_info = &render_infos[i];
 
         if (render_info->num_vertices == 0) {
             continue;
@@ -158,6 +162,8 @@ void draw_voxel_color_pipeline(VkCommandBuffer command_buffer) {
         vkCmdBindVertexBuffers(command_buffer, 0, 1, &render_info->vertex_buffer, (VkDeviceSize[1]) { 0 });
         vkCmdDraw(command_buffer, render_info->num_vertices, 1, 0, 0);
     }
+
+    pthread_mutex_unlock(&voxel_dynamic_assets_front_index.mutex);
 }
 
 void term_voxel_color_pipeline(void) {

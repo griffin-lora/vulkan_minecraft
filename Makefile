@@ -4,7 +4,7 @@ GLSLC := glslc
 
 SOURCES := $(wildcard src/*.c) $(wildcard src/vk/*.c) $(wildcard src/voxel/*.c) $(wildcard src/link/*.c) $(wildcard src/link/*.cpp)
 SHADER_SOURCES := $(wildcard shader/*.vert) $(wildcard shader/*.frag)
-LIBS := -lvulkan -lglfw -lm
+LIBS := -lvulkan -lglfw -lm -lpthread
 OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
 DEPENDS := $(patsubst %.c,%.d,$(patsubst %.cpp,%.d,$(SOURCES)))
 SHADER_OBJECTS := $(patsubst %.vert,%.spv,$(patsubst %.frag,%.spv,$(SHADER_SOURCES)))

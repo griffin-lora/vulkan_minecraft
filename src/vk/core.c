@@ -8,6 +8,7 @@
 #include "defaults.h"
 #include "render.h"
 #include "debug_ui.h"
+#include "dynamic_asset_transfer.h"
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
@@ -526,6 +527,9 @@ const char* init_core(void) {
     msg = init_graphics_pipelines();
     if (msg != NULL) { return msg; }
 
+    msg = init_dynamic_asset_transfer();
+    if (msg != NULL) { return msg; }
+
     if (init_debug_ui() != result_success) {
         return "Failed to initialize debug ui\n";
     }
@@ -559,6 +563,7 @@ void term_all(void) {
     }
 
     term_assets();
+    term_dynamic_asset_transfer();
 
     vmaDestroyAllocator(allocator);
 

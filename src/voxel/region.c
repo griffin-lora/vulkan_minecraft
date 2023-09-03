@@ -1,14 +1,12 @@
 #include "region.h"
 #include "util.h"
 #include "face.h"
-#include "vk/core.h"
-#include "vk/defaults.h"
 #include <malloc.h>
 #include <string.h>
 #include <vk_mem_alloc.h>
 #include <stb_perlin.h>
 
-void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size_t region_z, voxel_region_voxel_type_array_t* voxel_types) {
+void create_voxel_region_voxel_type_array(size_t world_x, size_t world_y, size_t world_z, voxel_region_voxel_type_array_t* voxel_types) {
     float amplitude = 20.0f;
     float frequency = 0.01f;
     float lacunarity = 3.0f;
@@ -17,7 +15,7 @@ void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size
 
     for (size_t x = 0; x < VOXEL_REGION_SIZE; x++)
     for (size_t z = 0; z < VOXEL_REGION_SIZE; z++) {
-        float height = amplitude * ((stb_perlin_fbm_noise3((float)(x + region_x)*frequency, (float)region_y, (float)(z + region_z)*frequency, lacunarity, gain, octaves) + 1.0f) / 2.0f);
+        float height = amplitude * ((stb_perlin_fbm_noise3((float)(x + world_x)*frequency, (float)world_y, (float)(z + world_z)*frequency, lacunarity, gain, octaves) + 1.0f) / 2.0f);
         size_t world_height = (size_t)height;
         for (size_t y = 0; y < VOXEL_REGION_SIZE; y++) {
             voxel_type_t* type = &voxel_types->types[x][y][z];
@@ -157,54 +155,4 @@ void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_typ
             }), vertex_array, &current_chunk_info);
         }
     }
-}
-
-result_t begin_voxel_region_info(voxel_vertex_array_t* vertex_array, staging_t* staging, voxel_region_render_info_t* render_info, voxel_region_allocation_info_t* allocation_info) {
-    uint32_t num_vertices = vertex_array->num_vertices;
-    if (num_vertices == 0) {
-        return result_success;
-    }
-
-    render_info->num_vertices = num_vertices;
-
-    uint32_t num_array_bytes = num_vertices*sizeof(voxel_vertex_t);
-
-    if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
-        DEFAULT_VK_STAGING_BUFFER,
-        .size = num_array_bytes
-    }, &staging_allocation_create_info, &staging->buffer, &staging->allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
-        DEFAULT_VK_VERTEX_BUFFER,
-        .size = num_array_bytes
-    }, &device_allocation_create_info, &render_info->vertex_buffer, &allocation_info->vertex_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    uint32_t num_chunks = div_ceil_uint32(num_vertices, NUM_VOXEL_VERTEX_CHUNK_MEMBERS); // Integer ceiling division
-    uint32_t num_last_chunk_vertices = num_vertices % NUM_VOXEL_VERTEX_CHUNK_MEMBERS;
-    if (num_last_chunk_vertices == 0) {
-        num_last_chunk_vertices = NUM_VOXEL_VERTEX_CHUNK_MEMBERS;
-    }
-
-    void* mapped_data;
-    if (vmaMapMemory(allocator, staging->allocation, &mapped_data) != VK_SUCCESS) {
-        return result_failure;
-    }
-
-    voxel_vertex_chunk_t* chunk = vertex_array->chunk;
-    for (uint32_t j = 0; j < num_chunks; j++) {
-        uint32_t num_chunk_vertices = j == num_chunks - 1u ? num_last_chunk_vertices : NUM_VOXEL_VERTEX_CHUNK_MEMBERS;
-        memcpy(mapped_data + j*sizeof(chunk->vertices), chunk->vertices, num_chunk_vertices*sizeof(voxel_vertex_t));
-
-        voxel_vertex_chunk_t* new_chunk = chunk->next;
-        free(chunk);
-        chunk = new_chunk;
-    }
-
-    vmaUnmapMemory(allocator, staging->allocation);
-
-    return result_success;
 }

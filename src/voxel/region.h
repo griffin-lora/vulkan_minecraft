@@ -36,7 +36,5 @@ typedef struct {
     voxel_vertex_chunk_t* chunk;
 } voxel_vertex_array_t;
 
-void create_voxel_region_voxel_type_array(size_t region_x, size_t region_y, size_t region_z, voxel_region_voxel_type_array_t* voxel_types);
+void create_voxel_region_voxel_type_array(size_t world_x, size_t world_y, size_t world_z, voxel_region_voxel_type_array_t* voxel_types);
 void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_type_arrays, voxel_vertex_array_t* vertex_array);
-
-result_t begin_voxel_region_info(voxel_vertex_array_t* vertex_array, staging_t* staging, voxel_region_render_info_t* render_info, voxel_region_allocation_info_t* allocation_info);
