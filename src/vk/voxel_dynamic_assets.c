@@ -103,7 +103,8 @@ void end_voxel_regions(void) {
         if (!app_terminating) {
             pthread_cond_wait(&command_buffer_finished_condition, &command_buffer_finished_mutex);
         } else {
-            break;
+            // Since the app is terminating we do NOT clean up the voxel regions as they could still technically be in use
+            return;
         }
     }
 
