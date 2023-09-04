@@ -550,10 +550,10 @@ void term_all(void) {
         vkDestroyFence(device, in_flight_fences[i], NULL);
     }
 
+    term_dynamic_asset_transfer();
+
     term_assets();
     term_dynamic_assets();
-
-    term_dynamic_asset_transfer();
 
     vmaDestroyAllocator(allocator);
 

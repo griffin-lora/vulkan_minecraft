@@ -67,8 +67,8 @@ const char* update_dynamic_assets(void) {
 }
 
 void term_dynamic_assets(void) {
-    term_voxel_dynamic_assets();
-
     void* data;
     pthread_join(update_dynamic_assets_thread, &data);
+
+    term_voxel_dynamic_assets();
 }
