@@ -16,4 +16,5 @@ extern bool should_recreate_voxel_regions;
 
 const char* update_dynamic_assets(void);
 
+void term_update_dynamic_assets_thread(void);
 void term_dynamic_assets(void);

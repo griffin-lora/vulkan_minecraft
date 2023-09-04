@@ -22,7 +22,7 @@ int main(void) {
         glfwPollEvents();
 
         update_camera(delta);
-
+        
         msg = update_dynamic_assets();
         if (msg != NULL) {
             printf("%s", msg);

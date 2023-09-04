@@ -15,4 +15,6 @@ result_t begin_voxel_regions(void);
 void transfer_voxel_regions(void);
 void end_voxel_regions(void);
 
+void term_back_voxel_regions(void);
+
 void term_voxel_dynamic_assets(void);

@@ -30,7 +30,8 @@ VkPresentModeKHR present_mode;
 VkSemaphore image_available_semaphores[NUM_FRAMES_IN_FLIGHT];
 VkSemaphore render_finished_semaphores[NUM_FRAMES_IN_FLIGHT];
 VkFence in_flight_fences[NUM_FRAMES_IN_FLIGHT];
-pthread_mutex_t in_flight_fence_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t command_buffer_finished_conditions_mutexes[NUM_FRAMES_IN_FLIGHT] = { PTHREAD_MUTEX_INITIALIZER, PTHREAD_MUTEX_INITIALIZER };
+pthread_cond_t command_buffer_finished_conditions[NUM_FRAMES_IN_FLIGHT] = { PTHREAD_COND_INITIALIZER, PTHREAD_COND_INITIALIZER };
 uint32_t num_swapchain_images;
 VkImage* swapchain_images;
 VkImageView* swapchain_image_views;
@@ -537,6 +538,8 @@ const char* init_core(void) {
 }
 
 void term_all(void) {
+    term_update_dynamic_assets_thread();
+    
     vkDeviceWaitIdle(device);
     
     term_graphics_pipelines();

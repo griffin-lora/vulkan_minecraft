@@ -171,9 +171,11 @@ const char* draw_frame(float) {
     VkSemaphore render_finished_semaphore = render_finished_semaphores[frame_index];
     VkFence in_flight_fence = in_flight_fences[frame_index];
 
-    pthread_mutex_lock(&in_flight_fence_mutex);
     vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
-    pthread_mutex_unlock(&in_flight_fence_mutex);
+
+    pthread_mutex_lock(&command_buffer_finished_conditions_mutexes[frame_index]);
+    pthread_cond_signal(&command_buffer_finished_conditions[frame_index]);
+    pthread_mutex_unlock(&command_buffer_finished_conditions_mutexes[frame_index]);
 
     in_flight_time = get_current_microseconds() - start_time;
     start_time = get_current_microseconds();
@@ -247,7 +249,7 @@ const char* draw_frame(float) {
     start_time = get_current_microseconds();
 
     VkPipelineStageFlags wait_stage_flags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
+    
     pthread_mutex_lock(&queue_submit_mutex);
     if (vkQueueSubmit(graphics_queue, 1, &(VkSubmitInfo) {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
@@ -275,9 +277,7 @@ const char* draw_frame(float) {
         
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebuffer_resized) {
             framebuffer_resized = false;
-            pthread_mutex_lock(&in_flight_fence_mutex);
             vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
-            pthread_mutex_unlock(&in_flight_fence_mutex);
             reinit_swapchain();
         } else if (result != VK_SUCCESS) {
             return "Failed to present swap chain image";

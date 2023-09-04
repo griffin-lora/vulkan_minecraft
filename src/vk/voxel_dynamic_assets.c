@@ -74,7 +74,7 @@ void end_voxel_regions(void) {
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         end_voxel_region_info(&region_stagings[i]);
     }
-
+    
     pthread_mutex_lock(&voxel_dynamic_assets_front_index.mutex);
     voxel_dynamic_assets_front_index.index ^= 1; // swap back and front
     pthread_mutex_unlock(&voxel_dynamic_assets_front_index.mutex);
@@ -84,10 +84,11 @@ void end_voxel_regions(void) {
     voxel_region_render_info_t* render_infos = voxel_region_render_info_arrays[back_index];
     voxel_region_allocation_info_t* allocation_infos = voxel_region_allocation_info_arrays[back_index];
 
-    // Quick hack to prevent buffers from being destroyed while still being used in a command buffer
-    pthread_mutex_lock(&in_flight_fence_mutex);
-    vkWaitForFences(device, NUM_FRAMES_IN_FLIGHT, in_flight_fences, VK_TRUE, UINT64_MAX);
-    pthread_mutex_unlock(&in_flight_fence_mutex);
+    for (size_t i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
+        pthread_mutex_lock(&command_buffer_finished_conditions_mutexes[i]);
+        pthread_cond_wait(&command_buffer_finished_conditions[i], &command_buffer_finished_conditions_mutexes[i]);
+        pthread_mutex_unlock(&command_buffer_finished_conditions_mutexes[i]);
+    }
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         destroy_voxel_region_info(&render_infos[i], &allocation_infos[i]);
