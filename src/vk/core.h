@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <vk_mem_alloc.h>
 #include <pthread.h>
+#include <stdatomic.h>
 
 #define NUM_FRAMES_IN_FLIGHT 2
 
@@ -14,6 +15,7 @@ typedef union {
     };
 } queue_family_indices_t;
 
+extern atomic_bool app_terminating;
 extern GLFWwindow* window;
 extern VkDevice device;
 extern VkPhysicalDevice physical_device;
@@ -24,8 +26,9 @@ extern VkPresentModeKHR present_mode;
 extern VkSemaphore image_available_semaphores[];
 extern VkSemaphore render_finished_semaphores[];
 extern VkFence in_flight_fences[];
-extern pthread_mutex_t command_buffer_finished_conditions_mutexes[];
-extern pthread_cond_t command_buffer_finished_conditions[];
+extern pthread_mutex_t command_buffer_finished_mutex;
+extern pthread_cond_t command_buffer_finished_condition;
+extern bool command_buffer_finished_statuses[];
 extern uint32_t num_swapchain_images;
 extern VkImage* swapchain_images;
 extern VkImageView* swapchain_image_views;

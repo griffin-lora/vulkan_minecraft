@@ -77,11 +77,9 @@ const char* update_dynamic_assets(void) {
 }
 
 void term_update_dynamic_assets_thread(void) {
-    for (size_t i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
-        pthread_mutex_lock(&command_buffer_finished_conditions_mutexes[i]);
-        pthread_cond_signal(&command_buffer_finished_conditions[i]);
-        pthread_mutex_unlock(&command_buffer_finished_conditions_mutexes[i]);
-    }
+    pthread_mutex_lock(&command_buffer_finished_mutex);
+    pthread_cond_signal(&command_buffer_finished_condition);
+    pthread_mutex_unlock(&command_buffer_finished_mutex);
 
     void* data;
     pthread_join(update_dynamic_assets_thread, &data);

@@ -84,11 +84,30 @@ void end_voxel_regions(void) {
     voxel_region_render_info_t* render_infos = voxel_region_render_info_arrays[back_index];
     voxel_region_allocation_info_t* allocation_infos = voxel_region_allocation_info_arrays[back_index];
 
+    pthread_mutex_lock(&command_buffer_finished_mutex);
     for (size_t i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
-        pthread_mutex_lock(&command_buffer_finished_conditions_mutexes[i]);
-        pthread_cond_wait(&command_buffer_finished_conditions[i], &command_buffer_finished_conditions_mutexes[i]);
-        pthread_mutex_unlock(&command_buffer_finished_conditions_mutexes[i]);
+        command_buffer_finished_statuses[i] = false;
     }
+
+    for (;;) {
+        bool finished = true;
+        for (size_t i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
+            if (!command_buffer_finished_statuses[i]) {
+                finished = false;
+            }
+        }
+        if (finished) {
+            break;
+        }
+
+        if (!app_terminating) {
+            pthread_cond_wait(&command_buffer_finished_condition, &command_buffer_finished_mutex);
+        } else {
+            break;
+        }
+    }
+
+    pthread_mutex_unlock(&command_buffer_finished_mutex);
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         destroy_voxel_region_info(&render_infos[i], &allocation_infos[i]);

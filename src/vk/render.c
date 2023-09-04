@@ -173,9 +173,10 @@ const char* draw_frame(float) {
 
     vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
 
-    pthread_mutex_lock(&command_buffer_finished_conditions_mutexes[frame_index]);
-    pthread_cond_signal(&command_buffer_finished_conditions[frame_index]);
-    pthread_mutex_unlock(&command_buffer_finished_conditions_mutexes[frame_index]);
+    pthread_mutex_lock(&command_buffer_finished_mutex);
+    command_buffer_finished_statuses[frame_index] = true;
+    pthread_cond_signal(&command_buffer_finished_condition);
+    pthread_mutex_unlock(&command_buffer_finished_mutex);
 
     in_flight_time = get_current_microseconds() - start_time;
     start_time = get_current_microseconds();
