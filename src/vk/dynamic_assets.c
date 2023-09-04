@@ -4,11 +4,13 @@
 #include "camera.h"
 #include <pthread.h>
 
+bool should_recreate_voxel_regions = true;
+
 typedef struct {
     bool should_recreate_voxel_regions;
 } update_dynamic_assets_thread_info_t;
 
-static bool has_update_dynamic_assets_thread;
+static bool has_update_dynamic_assets_thread = false;
 static pthread_t update_dynamic_assets_thread;
 
 void* update_dynamic_assets_thread_main(void* p) {

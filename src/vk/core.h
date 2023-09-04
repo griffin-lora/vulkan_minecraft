@@ -24,6 +24,7 @@ extern VkPresentModeKHR present_mode;
 extern VkSemaphore image_available_semaphores[];
 extern VkSemaphore render_finished_semaphores[];
 extern VkFence in_flight_fences[];
+extern pthread_mutex_t in_flight_fence_mutex;
 extern uint32_t num_swapchain_images;
 extern VkImage* swapchain_images;
 extern VkImageView* swapchain_image_views;

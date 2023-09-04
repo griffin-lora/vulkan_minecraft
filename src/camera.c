@@ -1,6 +1,7 @@
 #include "camera.h"
 #include "vk/core.h"
 #include "vk/voxel_color_pipeline.h"
+#include "vk/dynamic_assets.h"
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/cam.h>
 #include <cglm/struct/vec2.h>
@@ -19,7 +20,6 @@
 // TODO: Fix this
 vec3s camera_position;
 mat4s camera_view_projection;
-bool should_recreate_voxel_regions = true;
 
 static vec3s cam_pos = {{ 15.462208f, 11.152647f, 15.079316f }};
 static vec3s cam_vel = {{ 0.0f, 0.0f, 0.0f }};

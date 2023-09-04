@@ -1,5 +1,6 @@
 #pragma once
 #include <pthread.h>
+#include <stdbool.h>
 
 typedef struct {
     pthread_mutex_t mutex;
@@ -11,5 +12,8 @@ typedef struct {
     .index = 0\
 }
 
+extern bool should_recreate_voxel_regions;
+
 const char* update_dynamic_assets(void);
+
 void term_dynamic_assets(void);

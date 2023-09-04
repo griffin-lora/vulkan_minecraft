@@ -1,6 +1,7 @@
 #include "voxel_dynamic_assets.h"
 #include "voxel_dynamic_asset_transfer.h"
 #include "voxel/region.h"
+#include "vk/core.h"
 #include <stdalign.h>
 #include <malloc.h>
 #include <string.h>
@@ -82,6 +83,11 @@ void end_voxel_regions(void) {
 
     voxel_region_render_info_t* render_infos = voxel_region_render_info_arrays[back_index];
     voxel_region_allocation_info_t* allocation_infos = voxel_region_allocation_info_arrays[back_index];
+
+    // Quick hack to prevent buffers from being destroyed while still being used in a command buffer
+    pthread_mutex_lock(&in_flight_fence_mutex);
+    vkWaitForFences(device, NUM_FRAMES_IN_FLIGHT, in_flight_fences, VK_TRUE, UINT64_MAX);
+    pthread_mutex_unlock(&in_flight_fence_mutex);
 
     for (size_t i = 0; i < NUM_VOXEL_REGIONS; i++) {
         destroy_voxel_region_info(&render_infos[i], &allocation_infos[i]);

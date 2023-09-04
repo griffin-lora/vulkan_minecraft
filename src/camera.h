@@ -7,6 +7,5 @@
 
 extern vec3s camera_position;
 extern mat4s camera_view_projection;
-extern bool should_recreate_voxel_regions;
 
 void update_camera(float delta);

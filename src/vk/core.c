@@ -30,6 +30,7 @@ VkPresentModeKHR present_mode;
 VkSemaphore image_available_semaphores[NUM_FRAMES_IN_FLIGHT];
 VkSemaphore render_finished_semaphores[NUM_FRAMES_IN_FLIGHT];
 VkFence in_flight_fences[NUM_FRAMES_IN_FLIGHT];
+pthread_mutex_t in_flight_fence_mutex = PTHREAD_MUTEX_INITIALIZER;
 uint32_t num_swapchain_images;
 VkImage* swapchain_images;
 VkImageView* swapchain_image_views;
