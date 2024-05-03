@@ -4,7 +4,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <vk_mem_alloc.h>
-#include <stb_perlin.h>
+#include <stb/stb_perlin.h>
 
 void create_voxel_region_voxel_type_array(size_t seed, size_t world_x, size_t world_y, size_t world_z, voxel_region_voxel_type_array_t* voxel_types) {
     float amplitude = 20.0f;
@@ -102,7 +102,7 @@ void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_typ
                     if (x + 1u < VOXEL_REGION_SIZE && voxel_types->types[x + 1][y][z] != voxel_type_air) {
                         continue;
                     }
-                    if (x + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->front->types != NULL && voxel_type_arrays->front->types[0][y][z] != voxel_type_air) {
+                    if (x + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->front != NULL && voxel_type_arrays->front->types[0][y][z] != voxel_type_air) {
                         continue;
                     }
                     break;
@@ -110,7 +110,7 @@ void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_typ
                     if (x - 1u < VOXEL_REGION_SIZE && voxel_types->types[x - 1][y][z] != voxel_type_air) {
                         continue;
                     }
-                    if (x - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->back->types != NULL && voxel_type_arrays->back->types[VOXEL_REGION_SIZE - 1][y][z] != voxel_type_air) {
+                    if (x - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->back != NULL && voxel_type_arrays->back->types[VOXEL_REGION_SIZE - 1][y][z] != voxel_type_air) {
                         continue;
                     }
                     break;
@@ -118,7 +118,7 @@ void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_typ
                     if (y + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y + 1][z] != voxel_type_air) {
                         continue;
                     }
-                    if (y + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->top->types != NULL && voxel_type_arrays->top->types[x][0][z] != voxel_type_air) {
+                    if (y + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->top != NULL && voxel_type_arrays->top->types[x][0][z] != voxel_type_air) {
                         continue;
                     }
                     break;
@@ -126,7 +126,7 @@ void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_typ
                     if (y - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y - 1][z] != voxel_type_air) {
                         continue;
                     }
-                    if (y - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->bottom->types != NULL && voxel_type_arrays->bottom->types[x][VOXEL_REGION_SIZE - 1][z] != voxel_type_air) {
+                    if (y - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->bottom != NULL && voxel_type_arrays->bottom->types[x][VOXEL_REGION_SIZE - 1][z] != voxel_type_air) {
                         continue;
                     }
                     break;
@@ -134,7 +134,7 @@ void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_typ
                     if (z + 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z + 1] != voxel_type_air) {
                         continue;
                     }
-                    if (z + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->right->types != NULL && voxel_type_arrays->right->types[x][y][0] != voxel_type_air) {
+                    if (z + 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->right != NULL && voxel_type_arrays->right->types[x][y][0] != voxel_type_air) {
                         continue;
                     }
                     break;
@@ -142,7 +142,7 @@ void create_voxel_vertex_array(const voxel_region_voxel_type_arrays_t* voxel_typ
                     if (z - 1u < VOXEL_REGION_SIZE && voxel_types->types[x][y][z - 1] != voxel_type_air) {
                         continue;
                     }
-                    if (z - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->left->types != NULL && voxel_type_arrays->left->types[x][y][VOXEL_REGION_SIZE - 1] != voxel_type_air) {
+                    if (z - 1u >= VOXEL_REGION_SIZE && voxel_type_arrays->left != NULL && voxel_type_arrays->left->types[x][y][VOXEL_REGION_SIZE - 1] != voxel_type_air) {
                         continue;
                     }
                     break;

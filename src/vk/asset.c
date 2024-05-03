@@ -13,7 +13,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdalign.h>
-#include <stb_image.h>
+#include <stb/stb_image.h>
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/cam.h>
 #include <cglm/struct/vec2.h>
