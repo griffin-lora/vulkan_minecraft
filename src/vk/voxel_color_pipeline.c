@@ -2,7 +2,6 @@
 #include "core.h"
 #include "gfx_core.h"
 #include "asset.h"
-#include "util.h"
 #include "defaults.h"
 #include "render.h"
 #include "gfx_pipeline.h"

@@ -1,6 +1,5 @@
 #include "gfx_core.h"
 #include "core.h"
-#include "util.h"
 #include "defaults.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,7 +7,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <malloc.h>
-#include <math.h>
 
 result_t create_shader_module(const char* path, VkShaderModule* shader_module) {
     if (access(path, F_OK) != 0) {

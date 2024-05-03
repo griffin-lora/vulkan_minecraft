@@ -1,5 +1,4 @@
 #include "defaults.h"
-#include "util.h"
 #include <stdalign.h>
 
 alignas(64)

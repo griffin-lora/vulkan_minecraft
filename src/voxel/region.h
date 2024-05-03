@@ -1,9 +1,6 @@
 #pragma once
 #include "type.h"
 #include "vertex.h"
-#include "infos.h"
-#include "result.h"
-#include "vk/gfx_core.h"
 
 #define VOXEL_REGION_SIZE (1 << NUM_VOXEL_REGION_AXIS_BITS)
 

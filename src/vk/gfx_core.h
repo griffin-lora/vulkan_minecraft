@@ -1,5 +1,4 @@
 #pragma once
-#include "vk.h"
 #include "result.h"
 #include <vk_mem_alloc.h>
 #include <stdbool.h>

@@ -1,5 +1,4 @@
 #pragma once
-#include "result.h"
 #include "vk/core.h"
 
 extern VkSampler voxel_region_texture_image_sampler;

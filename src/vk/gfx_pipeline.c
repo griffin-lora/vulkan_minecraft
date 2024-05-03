@@ -2,9 +2,6 @@
 #include "voxel_color_pipeline.h"
 #include "text_pipeline.h"
 #include "core.h"
-#include "gfx_core.h"
-#include "util.h"
-#include "asset.h"
 
 const char* init_graphics_pipelines() {
     const char* msg = init_voxel_color_pipeline();

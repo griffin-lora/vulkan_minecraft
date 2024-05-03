@@ -1,6 +1,5 @@
 #include "camera.h"
 #include "vk/core.h"
-#include "vk/voxel_color_pipeline.h"
 #include "vk/dynamic_assets.h"
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/cam.h>
@@ -10,7 +9,6 @@
 #include <cglm/struct/affine.h>
 #include <stdbool.h>
 #include <math.h>
-#include <stdio.h>
 
 #define M_TAU ((float)GLM_PI * 2.0f)
 
@@ -32,7 +30,7 @@ static vec2s rotation_mode_cursor_position = {{ 0.0f, 0.0f }};
 static vec2s rotation_mode_norm_cursor_position = {{ 0.0f, 0.0f }};
 
 static bool is_cursor_position_out_of_bounds(vec2s cursor_position) {
-    return cursor_position.x < 0 || cursor_position.x >= swap_image_extent.width || cursor_position.y < 0.0f || cursor_position.y >= swap_image_extent.height;
+    return cursor_position.x < 0.0f || cursor_position.x >= (float) swap_image_extent.width || cursor_position.y < 0.0f || cursor_position.y >= (float) swap_image_extent.height;
 }
 
 static vec2s get_norm_cursor_position(float aspect, vec2s cursor_position) {

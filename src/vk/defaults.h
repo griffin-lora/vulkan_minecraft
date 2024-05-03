@@ -1,5 +1,4 @@
 #pragma once
-#include "vk.h"
 #include <vk_mem_alloc.h>
 
 extern const VkPipelineInputAssemblyStateCreateInfo default_input_assembly_create_info;

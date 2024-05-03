@@ -1,7 +1,6 @@
 #include "dynamic_assets.h"
 #include "dynamic_asset_transfer.h"
 #include "voxel_dynamic_assets.h"
-#include "camera.h"
 #include "core.h"
 #include <pthread.h>
 #include <stdatomic.h>

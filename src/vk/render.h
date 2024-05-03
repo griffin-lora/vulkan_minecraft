@@ -1,6 +1,5 @@
 #pragma once
 #include "vk.h"
-#include "core.h"
 #include "result.h"
 
 extern VkRenderPass frame_render_pass;

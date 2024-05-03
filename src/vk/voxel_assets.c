@@ -1,6 +1,4 @@
 #include "voxel_assets.h"
-#include "voxel/vertex.h"
-#include "voxel/region.h"
 #include "core.h"
 #include "defaults.h"
 #include <stdalign.h>
