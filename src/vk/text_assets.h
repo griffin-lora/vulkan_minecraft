@@ -1,8 +1,7 @@
 #pragma once
 #include "result.h"
-#include "vk.h"
+#include <GLFW/glfw3.h>
 #include <vk_mem_alloc.h>
-#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/vec2.h>
 
 typedef struct {

@@ -9,7 +9,7 @@ OBJECTS := $(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
 DEPENDS := $(patsubst %.c,%.d,$(patsubst %.cpp,%.d,$(SOURCES)))
 SHADER_OBJECTS := $(patsubst %.vert,%.spv,$(patsubst %.frag,%.spv,$(SHADER_SOURCES)))
 
-CFLAGS = -O2 -std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wno-override-init -Wno-pointer-arith -Werror -Wfatal-errors -g -Isrc -Ilib
+CFLAGS = -O2 -std=c2x -Wall -Wextra -Wpedantic -Wconversion -Wno-override-init -Wno-pointer-arith -Werror -Wfatal-errors -g -Isrc -Ilib -DGLFW_INCLUDE_VULKAN -DCGLM_FORCE_DEPTH_ZERO_TO_ONE
 CXXFLAGS = -O2 -Isrc -Ilib
 
 .PHONY: build run clean

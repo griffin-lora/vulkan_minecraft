@@ -143,7 +143,7 @@ result_t set_text_model_message(size_t index, const char* message) {
 
         int32_t glyph_char = message[i];
         
-        vec2s glyph_tex_coord = {{ (float)(glyph_char*TEXT_GLYPH_TEXTURE_SIZE % (int32_t)text_glyph_image_width), (float)(TEXT_GLYPH_TEXTURE_SIZE*(glyph_char*TEXT_GLYPH_TEXTURE_SIZE / (int32_t)text_glyph_image_width)) }};
+        vec2s glyph_tex_coord = {{ (float) (glyph_char*TEXT_GLYPH_TEXTURE_SIZE % (int32_t)text_glyph_image_width), (float) (TEXT_GLYPH_TEXTURE_SIZE*(glyph_char*TEXT_GLYPH_TEXTURE_SIZE / (int32_t)text_glyph_image_width)) }};
         glyph_tex_coord.x /= (float)text_glyph_image_width;
         glyph_tex_coord.y /= (float)text_glyph_image_height;
 

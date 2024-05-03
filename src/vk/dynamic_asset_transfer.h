@@ -1,6 +1,6 @@
 #pragma once
-#include "vk.h"
 #include "result.h"
+#include <GLFW/glfw3.h>
 #include <pthread.h>
 
 extern VkCommandPool dynamic_asset_transfer_command_pool;

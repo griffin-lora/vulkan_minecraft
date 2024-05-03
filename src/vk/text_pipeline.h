@@ -1,5 +1,5 @@
 #pragma once
-#include "vk.h"
+#include <GLFW/glfw3.h>
 
 const char* init_text_pipeline(void);
 void draw_text_pipeline(VkCommandBuffer command_buffer);

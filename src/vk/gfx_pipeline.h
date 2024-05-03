@@ -1,5 +1,5 @@
 #pragma once
-#include "vk.h"
+#include <GLFW/glfw3.h>
 
 typedef struct {
     VkDescriptorSetLayout descriptor_set_layout;

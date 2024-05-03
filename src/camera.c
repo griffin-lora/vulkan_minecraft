@@ -1,7 +1,6 @@
 #include "camera.h"
 #include "vk/core.h"
 #include "vk/dynamic_assets.h"
-#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/cam.h>
 #include <cglm/struct/vec2.h>
 #include <cglm/struct/vec3.h>

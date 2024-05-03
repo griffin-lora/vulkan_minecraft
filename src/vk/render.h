@@ -1,6 +1,6 @@
 #pragma once
-#include "vk.h"
 #include "result.h"
+#include <GLFW/glfw3.h>
 
 extern VkRenderPass frame_render_pass;
 extern VkImageView frame_color_image_view;

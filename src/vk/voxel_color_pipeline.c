@@ -11,7 +11,6 @@
 #include "voxel/vertex.h"
 #include <vk_mem_alloc.h>
 #include <stdalign.h>
-#define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <cglm/struct/mat4.h>
 #include <cglm/struct/cam.h>
 #include <cglm/struct/mat3.h>

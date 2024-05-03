@@ -1,5 +1,5 @@
 #pragma once
-#include "vk.h"
+#include <GLFW/glfw3.h>
 
 const char* init_voxel_color_pipeline(void);
 void draw_voxel_color_pipeline(VkCommandBuffer command_buffer);
