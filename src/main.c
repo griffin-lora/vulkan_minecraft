@@ -1,3 +1,4 @@
+#include "result.h"
 #include "vk/core.h"
 #include "vk/render.h"
 #include "camera.h"
@@ -8,9 +9,9 @@
 #include <stdio.h>
 
 int main(void) {
-    const char* msg = init_core();
-    if (msg != NULL) {
-        printf("%s", msg);
+    result_t result;
+    if ((result = init_core()) != result_success) {
+        print_result_error(result);
         return 1;
     }
 
@@ -23,7 +24,7 @@ int main(void) {
 
         update_camera(delta);
         
-        msg = update_dynamic_assets();
+        const char* msg = update_dynamic_assets();
         if (msg != NULL) {
             printf("%s", msg);
             return 1;

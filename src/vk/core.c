@@ -8,6 +8,7 @@
 #include "debug_ui.h"
 #include "dynamic_asset_transfer.h"
 #include "dynamic_assets.h"
+#include <GLFW/glfw3.h>
 #include <stdbool.h>
 #include <string.h>
 #include <malloc.h>
@@ -74,7 +75,7 @@ static result_t check_layers(void) {
         }
 
         if (not_found) {
-            return result_failure;
+            return result_validation_layers_unavailable;
         }
     }
 
@@ -193,7 +194,7 @@ static result_t get_physical_device(uint32_t num_physical_devices, const VkPhysi
         *out_queue_family_indices = (queue_family_indices_t) {{ graphics_queue_family_index, presentation_queue_family_index }};
         return result_success;
     }
-    return result_failure;
+    return result_suitable_physical_device_unavailable;
 }
 
 static VkSurfaceFormatKHR get_surface_format(uint32_t num_surface_formats, const VkSurfaceFormatKHR surface_formats[]) {
@@ -271,7 +272,7 @@ static result_t init_swapchain(void) {
     }
 
     if (vkCreateSwapchainKHR(device, &info, NULL, &swapchain) != VK_SUCCESS) {
-        return result_failure;
+        return result_swapchain_create_failure;
     }
 
     return result_success;
@@ -287,7 +288,7 @@ static result_t init_swapchain_framebuffers(void) {
             .format = surface_format.format,
             .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT
         }, NULL, &swapchain_image_views[i]) != VK_SUCCESS) {
-            return result_failure;
+            return result_image_view_create_failure;
         }
     }
 
@@ -301,7 +302,7 @@ static result_t init_swapchain_framebuffers(void) {
             .height = swap_image_extent.height,
             .layers = 1
         }, NULL, &swapchain_framebuffers[i]) != VK_SUCCESS) {
-            return result_failure;
+            return result_framebuffer_create_failure;
         }
     }
     return result_success;
@@ -372,18 +373,21 @@ static VkSampleCountFlagBits get_max_multisample_flags(const VkPhysicalDevicePro
     return VK_SAMPLE_COUNT_1_BIT;
 }
 
-const char* init_core(void) {
+result_t init_core(void) {
+    result_t result;
+    
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
 
     window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", NULL, NULL);
     glfwSetFramebufferSizeCallback(window, framebuffer_resize);
 
     //
-    if (check_layers() != result_success) {
-        return "Validation layers requested, but not available\n";
+    if ((result = check_layers()) != result_success) {
+        return result;
     }
 
     uint32_t num_instance_extensions;
@@ -404,17 +408,17 @@ const char* init_core(void) {
         .enabledLayerCount = NUM_ELEMS(layers),
         .ppEnabledLayerNames = layers
     }, NULL, &instance) != VK_SUCCESS) {
-        return "Failed to create instance\n";
+        return result_instance_create_failure;
     }
 
     if (glfwCreateWindowSurface(instance, window, NULL, &surface) != VK_SUCCESS) {
-        return "Failed to create window surface\n";
+        return result_window_surface_create_failure;
     }
 
     uint32_t num_physical_devices;
     vkEnumeratePhysicalDevices(instance, &num_physical_devices, NULL);
     if (num_physical_devices == 0) {
-        return "Failed to find physical devices with Vulkan support\n";
+        return result_physical_device_support_unavailable;
     }
 
     uint32_t num_surface_formats;
@@ -424,8 +428,8 @@ const char* init_core(void) {
         VkPhysicalDevice physical_devices[num_physical_devices];
         vkEnumeratePhysicalDevices(instance, &num_physical_devices, physical_devices);
 
-        if (get_physical_device(num_physical_devices, physical_devices, &physical_device, &num_surface_formats, &num_present_modes, &queue_family_indices) != result_success) {
-            return "Failed to get a suitable physical device\n";
+        if ((result = get_physical_device(num_physical_devices, physical_devices, &physical_device, &num_surface_formats, &num_present_modes, &queue_family_indices)) != result_success) {
+            return result;
         }
     }
 
@@ -455,7 +459,7 @@ const char* init_core(void) {
         .enabledLayerCount = NUM_ELEMS(layers),
         .ppEnabledLayerNames = layers
     }, NULL, &device) != VK_SUCCESS) {
-        return "Failed to create logical device\n";
+        return result_logical_device_create_failure;
     }
 
     if (vmaCreateAllocator(&(VmaAllocatorCreateInfo) {
@@ -467,7 +471,7 @@ const char* init_core(void) {
         .vulkanApiVersion = VK_API_VERSION_1_0,
         .flags = 0 // Don't think any are needed
     }, &allocator) != VK_SUCCESS) {
-        return "Failed to create memory allocator\n";
+        return result_memory_allocator_create_failure;
     }
 
     for (size_t i = 0; i < NUM_FRAMES_IN_FLIGHT; i++) {
@@ -479,7 +483,7 @@ const char* init_core(void) {
                 .flags = VK_FENCE_CREATE_SIGNALED_BIT
             }, NULL, &in_flight_fences[i]) != VK_SUCCESS
         ) {
-            return "Failed to create synchronization primitives\n";
+            return result_synchronization_primitive_create_failure;
         }
     }
 
@@ -500,29 +504,29 @@ const char* init_core(void) {
         present_mode = get_present_mode(num_present_modes, present_modes);
     }
 
-    if (init_swapchain() != result_success) {
-        return "Failed to create swap chain\n";
+    if ((result = init_swapchain()) != result_success) {
+        return result;
     }
     
     depth_image_format = get_supported_format(3, (VkFormat[3]) { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT }, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
     if (depth_image_format == VK_FORMAT_MAX_ENUM) {
-        return "Failed to get a supported depth image format\n";
+        return result_supported_depth_image_format_unavailable;
     }
 
     const char* msg = init_dynamic_asset_transfer();
-    if (msg != NULL) { return msg; }
+    if (msg != NULL) { return result_failure; }
     
     msg = init_assets(&physical_device_properties);
-    if (msg != NULL) { return msg; }
+    if (msg != NULL) { return result_failure; }
 
     msg = init_frame_rendering();
-    if (msg != NULL) { return msg; }
+    if (msg != NULL) { return result_failure; }
 
     msg = init_graphics_pipelines();
-    if (msg != NULL) { return msg; }
+    if (msg != NULL) { return result_failure; }
 
-    if (init_debug_ui() != result_success) {
-        return "Failed to initialize debug ui\n";
+    if ((result = init_debug_ui()) != result_success) {
+        return result;
     }
 
     vkGetSwapchainImagesKHR(device, swapchain, &num_swapchain_images, NULL);
@@ -530,11 +534,11 @@ const char* init_core(void) {
     swapchain_image_views = memalign(64, num_swapchain_images*sizeof(VkImageView));
     swapchain_framebuffers = memalign(64, num_swapchain_images*sizeof(VkFramebuffer));
 
-    if (init_swapchain_framebuffers() != result_success) {
-        return "Failed to create framebuffer\n";
+    if ((result = init_swapchain_framebuffers()) != result_success) {
+        return result;
     }
 
-    return NULL;
+    return result_success;
 }
 
 void term_all(void) {

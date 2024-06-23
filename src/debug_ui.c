@@ -8,8 +8,9 @@
 #define NUM_TEXT_MODEL_GLYPHS 256
 
 result_t init_debug_ui(void) {
-    if (init_text_model(TEXT_MODEL_INDEX, (vec2s) {{ -0.9f, -0.9f }}, NUM_TEXT_MODEL_GLYPHS) != result_success) {
-        return result_failure;
+    result_t result;
+    if ((result = init_text_model(TEXT_MODEL_INDEX, (vec2s) {{ -0.9f, -0.9f }}, NUM_TEXT_MODEL_GLYPHS)) != result_success) {
+        return result;
     }
 
     return result_success;

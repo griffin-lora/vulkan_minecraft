@@ -1,4 +1,5 @@
 #pragma once
+#include "result.h"
 #include <GLFW/glfw3.h>
 #include <stdbool.h>
 #include <vk_mem_alloc.h>
@@ -48,5 +49,5 @@ extern VkFormat depth_image_format;
 
 void reinit_swapchain(void);
 
-const char* init_core(void);
+result_t init_core(void);
 void term_all(void);

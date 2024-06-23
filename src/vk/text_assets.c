@@ -91,7 +91,7 @@ void end_text_assets(void) {
 
 result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs) {
     if (index >= NUM_TEXT_MODELS) {
-        return result_failure;
+        return result_text_model_index_invalid;
     }
 
     text_model_render_info_t* render_info = &text_model_render_infos[index];
@@ -105,14 +105,14 @@ result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs
         DEFAULT_VK_STAGING_BUFFER,
         .size = num_glyphs*sizeof(text_glyph_instance_t)
     }, &staging_allocation_create_info, staging_buffer, staging_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
+        return result_buffer_create_failure;
     }
 
     if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
         DEFAULT_VK_VERTEX_BUFFER,
         .size = num_glyphs*sizeof(text_glyph_instance_t)
     }, &device_allocation_create_info, &render_info->instance_buffer, &allocation_info->instance_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
+        return result_buffer_create_failure;
     }
 
     return result_success;
