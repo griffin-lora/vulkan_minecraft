@@ -54,7 +54,7 @@ result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs
 // NOTE: Can only be called once per frame per index
 result_t set_text_model_message(size_t index, const char* message);
 
-const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint32_t width, uint32_t height);
+result_t begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint32_t width, uint32_t height);
 void transfer_text_assets(VkCommandBuffer command_buffer);
 void end_text_assets(void);
 

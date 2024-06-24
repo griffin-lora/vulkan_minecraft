@@ -1,6 +1,7 @@
 #include "gfx_core.h"
 #include "core.h"
 #include "defaults.h"
+#include "result.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,12 +11,12 @@
 
 result_t create_shader_module(const char* path, VkShaderModule* shader_module) {
     if (access(path, F_OK) != 0) {
-        return result_failure;
+        return result_file_access_failure;
     }
 
     FILE* file = fopen(path, "rb");
     if (file == NULL) {
-        return result_failure;
+        return result_file_open_failure;
     }
 
     struct stat st;
@@ -27,7 +28,7 @@ result_t create_shader_module(const char* path, VkShaderModule* shader_module) {
     uint32_t* bytes = memalign(64, aligned_num_bytes);
     memset(bytes, 0, aligned_num_bytes);
     if (fread(bytes, num_bytes, 1, file) != 1) {
-        return result_failure;
+        return result_file_read_failure;
     }
 
     fclose(file);
@@ -37,7 +38,7 @@ result_t create_shader_module(const char* path, VkShaderModule* shader_module) {
         .codeSize = num_bytes,
         .pCode = bytes
     }, NULL, shader_module) != VK_SUCCESS) {
-        return result_failure;
+        return result_shader_module_create_failure;
     }
 
     free(bytes);
@@ -47,7 +48,7 @@ result_t create_shader_module(const char* path, VkShaderModule* shader_module) {
 result_t write_to_buffer(VmaAllocation buffer_allocation, size_t num_bytes, const void* data) {
     void* mapped_data;
     if (vmaMapMemory(allocator, buffer_allocation, &mapped_data) != VK_SUCCESS) {
-        return result_failure;
+        return result_map_memory_failure;
     }
     memcpy(mapped_data, data, num_bytes);
     vmaUnmapMemory(allocator, buffer_allocation);
@@ -58,7 +59,7 @@ result_t write_to_buffer(VmaAllocation buffer_allocation, size_t num_bytes, cons
 result_t writes_to_buffer(VmaAllocation buffer_allocation, size_t num_write_bytes, size_t num_writes, const void* const data_array[]) {
     void* mapped_data;
     if (vmaMapMemory(allocator, buffer_allocation, &mapped_data) != VK_SUCCESS) {
-        return result_failure;
+        return result_map_memory_failure;
     }
     for (size_t i = 0; i < num_writes; i++) {
         memcpy(mapped_data + (i*num_write_bytes), data_array[i], num_write_bytes);
@@ -70,7 +71,7 @@ result_t writes_to_buffer(VmaAllocation buffer_allocation, size_t num_write_byte
 
 result_t create_descriptor_set(const VkDescriptorSetLayoutCreateInfo* descriptor_set_layout_create_info, descriptor_info_t descriptor_infos[], VkDescriptorSetLayout* descriptor_set_layout, VkDescriptorPool* descriptor_pool, VkDescriptorSet* descriptor_set) {
     if (vkCreateDescriptorSetLayout(device, descriptor_set_layout_create_info, NULL, descriptor_set_layout) != VK_SUCCESS) {
-        return result_failure;
+        return result_descriptor_set_layout_create_failure;
     }
 
     uint32_t num_bindings = descriptor_set_layout_create_info->bindingCount;
@@ -91,7 +92,7 @@ result_t create_descriptor_set(const VkDescriptorSetLayoutCreateInfo* descriptor
             .pPoolSizes = sizes,
             .maxSets = 1
         }, NULL, descriptor_pool) != VK_SUCCESS) {
-            return result_failure;
+            return result_descriptor_pool_create_failure;
         }
     }
 
@@ -101,7 +102,7 @@ result_t create_descriptor_set(const VkDescriptorSetLayoutCreateInfo* descriptor
         .descriptorSetCount = 1,
         .pSetLayouts = descriptor_set_layout
     }, descriptor_set) != VK_SUCCESS) {
-        return result_failure;
+        return result_descriptor_sets_allocate_failure;
     }
 
     {
@@ -133,6 +134,8 @@ result_t create_descriptor_set(const VkDescriptorSetLayoutCreateInfo* descriptor
 }
 
 result_t begin_images(size_t num_images, const image_create_info_t infos[], staging_t stagings[], VkImage images[], VmaAllocation allocations[]) {
+    result_t result;
+
     for (size_t i = 0; i < num_images; i++) {
         const image_create_info_t* info = &infos[i];
         
@@ -144,16 +147,16 @@ result_t begin_images(size_t num_images, const image_create_info_t infos[], stag
             DEFAULT_VK_STAGING_BUFFER,
             .size = num_image_bytes
         }, &staging_allocation_create_info, &stagings[i].buffer, &stagings[i].allocation, NULL) != VK_SUCCESS) {
-            return result_failure;
+            return result_buffer_create_failure;
         }
 
         if (vmaCreateImage(allocator, &info->info, &device_allocation_create_info, &images[i], &allocations[i], NULL) != VK_SUCCESS) {
-            return result_failure;
+            return result_image_create_failure;
         }
 
         const void* const* pixel_arrays = (const void* const*)info->pixel_arrays;
-        if (writes_to_buffer(stagings[i].allocation, num_layer_bytes, num_layers, pixel_arrays) != result_success) {
-            return result_failure;
+        if ((result = writes_to_buffer(stagings[i].allocation, num_layer_bytes, num_layers, pixel_arrays)) != result_success) {
+            return result;
         }
     }
 
@@ -323,13 +326,14 @@ result_t begin_buffer(
     VkDeviceSize num_elements, uint32_t num_element_bytes, const void* array,
     staging_t* staging, VkBuffer* buffer, VmaAllocation* allocation
 ) {
+    result_t result;
     VkDeviceSize num_array_bytes = num_elements*num_element_bytes;
 
     if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
         DEFAULT_VK_STAGING_BUFFER,
         .size = num_array_bytes
     }, &staging_allocation_create_info, &staging->buffer, &staging->allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
+        return result_buffer_create_failure;
     }
     
     {
@@ -337,12 +341,12 @@ result_t begin_buffer(
         info.size = num_array_bytes;
 
         if (vmaCreateBuffer(allocator, &info, &device_allocation_create_info, buffer, allocation, NULL) != VK_SUCCESS) {
-            return result_failure;
+            return result_buffer_create_failure;
         }
     }
 
-    if (write_to_buffer(staging->allocation, num_array_bytes, array) != result_success) {
-        return result_failure;
+    if ((result = write_to_buffer(staging->allocation, num_array_bytes, array)) != result_success) {
+        return result;
     }
 
     return result_success;

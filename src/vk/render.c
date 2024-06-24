@@ -31,7 +31,7 @@ result_t init_frame_swapchain_dependents(void) {
         .samples = render_multisample_flags,
         .usage = VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
     }, &device_allocation_create_info, &frame_color_image, &frame_color_image_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
+        return result_image_create_failure;
     }
 
     if (vkCreateImageView(device, &(VkImageViewCreateInfo) {
@@ -40,7 +40,7 @@ result_t init_frame_swapchain_dependents(void) {
         .format = surface_format.format,
         .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT
     }, NULL, &frame_color_image_view) != VK_SUCCESS) {
-        return result_failure;
+        return result_image_view_create_failure;
     }
 
     if (vmaCreateImage(allocator, &(VkImageCreateInfo) {
@@ -51,7 +51,7 @@ result_t init_frame_swapchain_dependents(void) {
         .samples = render_multisample_flags,
         .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT
     }, &device_allocation_create_info, &frame_depth_image, &frame_depth_image_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
+        return result_image_create_failure;
     }
     
     if (vkCreateImageView(device, &(VkImageViewCreateInfo) {
@@ -60,7 +60,7 @@ result_t init_frame_swapchain_dependents(void) {
         .format = depth_image_format,
         .subresourceRange.aspectMask = (depth_image_format == VK_FORMAT_D32_SFLOAT_S8_UINT || depth_image_format == VK_FORMAT_D24_UNORM_S8_UINT) ? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_DEPTH_BIT
     }, NULL, &frame_depth_image_view) != VK_SUCCESS) {
-        return result_failure;
+        return result_image_view_create_failure;
     }
 
     return result_success;
@@ -73,9 +73,11 @@ void term_frame_swapchain_dependents(void) {
     vmaDestroyImage(allocator, frame_depth_image, frame_depth_image_allocation);
 }
 
-const char* init_frame_rendering(void) {
-    if (init_frame_swapchain_dependents() != result_success) {
-        return "Failed to create frame swapchain dependents\n";
+result_t init_frame_rendering(void) {
+    result_t result;
+
+    if ((result = init_frame_swapchain_dependents()) != result_success) {
+        return result;
     }
     
     if (vkCreateCommandPool(device, &(VkCommandPoolCreateInfo) {
@@ -83,7 +85,7 @@ const char* init_frame_rendering(void) {
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
         .queueFamilyIndex = queue_family_indices.graphics
     }, NULL, &frame_command_pool) != VK_SUCCESS) {
-        return "Failed to create command pool\n";
+        return result_command_pool_create_failure;
     }
 
     if (vkAllocateCommandBuffers(device, &(VkCommandBufferAllocateInfo) {
@@ -91,7 +93,7 @@ const char* init_frame_rendering(void) {
         .commandPool = frame_command_pool,
         .commandBufferCount = NUM_FRAMES_IN_FLIGHT
     }, frame_command_buffers) != VK_SUCCESS) {
-        return "Failed to allocate frame command buffers\n";
+        return result_command_buffers_allocate_failure;
     }
 
     if (vkCreateRenderPass(device, &(VkRenderPassCreateInfo) {
@@ -154,10 +156,10 @@ const char* init_frame_rendering(void) {
             .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT
         }
     }, NULL, &frame_render_pass) != VK_SUCCESS) {
-        return "Failed to create frame render pass\n";
+        return result_render_pass_create_failure;
     }
 
-    return NULL;
+    return result_success;
 }
 
 const char* draw_frame(float) {
@@ -200,7 +202,7 @@ const char* draw_frame(float) {
     if (vkBeginCommandBuffer(command_buffer, &(VkCommandBufferBeginInfo) {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     }) != VK_SUCCESS) {
-        return "Failed to begin writing to command buffer\n";
+        return "result_command_buffer_begin_failure";
     }
 
     update_text_assets(command_buffer);

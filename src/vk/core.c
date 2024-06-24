@@ -513,18 +513,18 @@ result_t init_core(void) {
         return result_supported_depth_image_format_unavailable;
     }
 
-    const char* msg = init_dynamic_asset_transfer();
-    if (msg != NULL) { return result_failure; }
-    
-    msg = init_assets(&physical_device_properties);
-    if (msg != NULL) { return result_failure; }
-
-    msg = init_frame_rendering();
-    if (msg != NULL) { return result_failure; }
-
-    msg = init_graphics_pipelines();
-    if (msg != NULL) { return result_failure; }
-
+    if ((result = init_dynamic_asset_transfer()) != result_success) {
+        return result;
+    }
+    if ((result = init_assets(&physical_device_properties)) != result_success) {
+        return result;
+    }
+    if ((result = init_frame_rendering()) != result_success) {
+        return result;
+    }
+    if ((result = init_graphics_pipelines()) != result_success) {
+        return result;
+    }
     if ((result = init_debug_ui()) != result_success) {
         return result;
     }

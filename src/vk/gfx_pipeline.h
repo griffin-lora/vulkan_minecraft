@@ -1,4 +1,5 @@
 #pragma once
+#include "result.h"
 #include <GLFW/glfw3.h>
 
 typedef struct {
@@ -9,7 +10,7 @@ typedef struct {
     VkPipeline pipeline;
 } graphics_pipeline_render_info_t;
 
-const char* init_graphics_pipelines(void);
+result_t init_graphics_pipelines(void);
 void draw_graphics_pipelines(VkCommandBuffer command_buffer);
 void term_graphics_pipelines(void);
 

@@ -1,16 +1,20 @@
 #include "gfx_pipeline.h"
+#include "result.h"
 #include "voxel_color_pipeline.h"
 #include "text_pipeline.h"
 #include "core.h"
 
-const char* init_graphics_pipelines() {
-    const char* msg = init_voxel_color_pipeline();
-    if (msg != NULL) { return msg; }
+result_t init_graphics_pipelines() {
+    result_t result;
+    
+    if ((result = init_voxel_color_pipeline()) != result_success) {
+        return result;
+    }
+    if ((result = init_text_pipeline()) != result_success) {
+        return result;
+    }
 
-    msg = init_text_pipeline();
-    if (msg != NULL) { return msg; }
-
-    return NULL;
+    return result_success;
 }
 
 void draw_graphics_pipelines(VkCommandBuffer command_buffer) {

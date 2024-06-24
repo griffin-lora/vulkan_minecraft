@@ -4,6 +4,7 @@
 #include "defaults.h"
 #include "asset.h"
 #include "gfx_pipeline.h"
+#include "result.h"
 #include "text_assets.h"
 #include "render.h"
 #include <stdalign.h>
@@ -17,8 +18,10 @@ typedef struct {
     vec2s model_position;
 } push_constants_t;
 
-const char* init_text_pipeline(void) {
-    if (create_descriptor_set(
+result_t init_text_pipeline(void) {
+    result_t result;
+
+    if ((result = create_descriptor_set(
         &(VkDescriptorSetLayoutCreateInfo) {
             .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
             
@@ -43,8 +46,8 @@ const char* init_text_pipeline(void) {
             }
         },
         &pipeline_info.descriptor_set_layout, &pipeline_info.descriptor_pool, &pipeline_info.descriptor_set
-    ) != result_success) {
-        return "Failed to create descriptor set\n";
+    )) != result_success) {
+        return result;
     }
 
     if (vkCreatePipelineLayout(device, &(VkPipelineLayoutCreateInfo) {
@@ -56,19 +59,19 @@ const char* init_text_pipeline(void) {
             .size = sizeof(push_constants_t)
         }
     }, NULL, &pipeline_info.pipeline_layout) != VK_SUCCESS) {
-        return "Failed to create pipeline layout\n";
+        return result_pipeline_layout_create_failure;
     }
 
     //
 
     VkShaderModule vertex_shader_module;
-    if (create_shader_module("shader/text_pipeline_vertex.spv", &vertex_shader_module) != result_success) {
-        return "Failed to create vertex shader module\n";
+    if ((result = create_shader_module("shader/text_pipeline_vertex.spv", &vertex_shader_module)) != result_success) {
+        return result;
     }
 
     VkShaderModule fragment_shader_module;
-    if (create_shader_module("shader/text_pipeline_fragment.spv", &fragment_shader_module) != result_success) {
-        return "Failed to create fragment shader module\n";
+    if ((result = create_shader_module("shader/text_pipeline_fragment.spv", &fragment_shader_module)) != result_success) {
+        return result;
     }
 
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &(VkGraphicsPipelineCreateInfo) {
@@ -141,13 +144,13 @@ const char* init_text_pipeline(void) {
         .layout = pipeline_info.pipeline_layout,
         .renderPass = frame_render_pass
     }, NULL, &pipeline_info.pipeline) != VK_SUCCESS) {
-        return "Failed to create graphics pipeline\n";
+        return result_graphics_pipelines_create_failure;
     }
 
     vkDestroyShaderModule(device, vertex_shader_module, NULL);
     vkDestroyShaderModule(device, fragment_shader_module, NULL);
 
-    return NULL;
+    return result_success;
 }
 
 void draw_text_pipeline(VkCommandBuffer command_buffer) {

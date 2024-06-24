@@ -12,15 +12,37 @@ typedef enum {
     result_swapchain_create_failure,
     result_image_view_create_failure,
     result_framebuffer_create_failure,
-
+    result_command_pool_create_failure,
     result_buffer_create_failure,
+    result_image_create_failure,
+    result_sampler_create_failure,
+    result_render_pass_create_failure,
+    result_descriptor_set_layout_create_failure,
+    result_descriptor_pool_create_failure,
+    result_pipeline_layout_create_failure,
+    result_shader_module_create_failure,
+    result_graphics_pipelines_create_failure,
+
+    result_descriptor_sets_allocate_failure,
+
+    result_command_buffers_allocate_failure,
+    result_command_buffer_begin_failure,
+    result_command_buffer_end_failure,
+
+    result_image_pixels_load_failure,
+    result_map_memory_failure,
+
+    result_file_access_failure,
+    result_file_open_failure,
+    result_file_read_failure,
     
     result_validation_layers_unavailable,
     result_physical_device_support_unavailable,
     result_suitable_physical_device_unavailable,
     result_supported_depth_image_format_unavailable,
 
-    result_text_model_index_invalid
+    result_text_model_index_invalid,
+    result_image_dimensions_invalid
 } result_t;
 
 void print_result_error(result_t result);

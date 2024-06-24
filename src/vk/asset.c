@@ -1,4 +1,5 @@
 #include "asset.h"
+#include "result.h"
 #include "util.h"
 #include "core.h"
 #include "gfx_core.h"
@@ -21,7 +22,9 @@ VkImage texture_images[NUM_TEXTURE_IMAGES];
 VmaAllocation texture_image_allocations[NUM_TEXTURE_IMAGES];
 VkImageView texture_image_views[NUM_TEXTURE_IMAGES];
 
-const char* init_assets(const VkPhysicalDeviceProperties* physical_device_properties) {
+result_t init_assets(const VkPhysicalDeviceProperties* physical_device_properties) {
+    result_t result;
+
     struct {
         const char* path;
         int channels;
@@ -73,11 +76,11 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
             info->pixel_arrays[j] = stbi_load(image_load_infos[i][j].path, &new_width, &new_height, (int[1]) { 0 }, image_load_infos[i][j].channels);
 
             if (info->pixel_arrays[j] == NULL) {
-                return "Failed to load image pixels\n";
+                return result_image_pixels_load_failure;
             }
 
             if (j > 0 && ((uint32_t)new_width != width || (uint32_t)new_width != height)) {
-                return "Failed to get image in same size\n";
+                return result_image_dimensions_invalid;
             }
 
             width = (uint32_t)new_width;
@@ -91,8 +94,8 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
 
     staging_t image_stagings[NUM_TEXTURE_IMAGES];
 
-    if (begin_images(NUM_TEXTURE_IMAGES, image_create_infos, image_stagings, texture_images, texture_image_allocations) != result_success) {
-        return "Failed to begin creating images\n";
+    if ((result = begin_images(NUM_TEXTURE_IMAGES, image_create_infos, image_stagings, texture_images, texture_image_allocations)) != result_success) {
+        return result;
     }
 
     for (size_t i = 0; i < NUM_TEXTURE_IMAGES; i++) {
@@ -103,11 +106,12 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         }
     }
 
-    const char* msg = begin_voxel_assets(physical_device_properties->limits.maxSamplerAnisotropy, image_create_infos[0].info.mipLevels);
-    if (msg != NULL) { return msg; }
-
-    msg = begin_text_assets(physical_device_properties->limits.maxSamplerAnisotropy, image_create_infos[1].info.mipLevels, image_create_infos[1].info.extent.width, image_create_infos[1].info.extent.height);
-    if (msg != NULL) { return msg; }
+    if ((result = begin_voxel_assets(physical_device_properties->limits.maxSamplerAnisotropy, image_create_infos[0].info.mipLevels)) != result_success) {
+        return result;
+    }
+    if ((result = begin_text_assets(physical_device_properties->limits.maxSamplerAnisotropy, image_create_infos[1].info.mipLevels, image_create_infos[1].info.extent.width, image_create_infos[1].info.extent.height)) != result_success) {
+        return result;
+    }
 
     //
 
@@ -115,7 +119,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     if (vkCreateFence(device, &(VkFenceCreateInfo) {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
     }, NULL, &transfer_fence) != VK_SUCCESS) {
-        return "Failed to create transfer fence\n";
+        return result_synchronization_primitive_create_failure;
     }
 
     VkCommandBuffer command_buffer;
@@ -123,14 +127,14 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
         DEFAULT_VK_COMMAND_BUFFER,
         .commandPool = dynamic_asset_transfer_command_pool
     }, &command_buffer) != VK_SUCCESS) {
-        return "Failed to create transfer command buffer\n";
+        return result_command_buffers_allocate_failure;
     }
 
     if (vkBeginCommandBuffer(command_buffer, &(VkCommandBufferBeginInfo) {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
         .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
     }) != VK_SUCCESS) {
-        return "Failed to write to transfer command buffer\n";
+        return result_command_buffer_begin_failure;
     }
 
     transfer_images(command_buffer, NUM_TEXTURE_IMAGES, image_create_infos, image_stagings, texture_images);
@@ -139,7 +143,7 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
     transfer_text_assets(command_buffer);
 
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
-        return "Failed to write to transfer command buffer\n";
+        return result_command_buffer_end_failure;
     }
 
     pthread_mutex_lock(&queue_submit_mutex);
@@ -175,11 +179,11 @@ const char* init_assets(const VkPhysicalDeviceProperties* physical_device_proper
             .subresourceRange.layerCount = image_create_info->arrayLayers,
             .subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT
         }, NULL, &texture_image_views[i]) != VK_SUCCESS) {
-            return "Failed to create texture image view\n";
+            return result_image_view_create_failure;
         }
     }
 
-    return NULL;
+    return result_success;
 }
 
 void term_assets(void) {

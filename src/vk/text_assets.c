@@ -1,6 +1,7 @@
 #include "text_assets.h"
 #include "core.h"
 #include "defaults.h"
+#include "result.h"
 #include "vk/gfx_core.h"
 #include <malloc.h>
 #include <string.h>
@@ -31,7 +32,9 @@ typedef struct {
 
 text_assets_info_t* info;
 
-const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint32_t width, uint32_t height) {
+result_t begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint32_t width, uint32_t height) {
+    result_t result;
+
     info = memalign(64, sizeof(text_assets_info_t));
     memset(info, 0, sizeof(text_assets_info_t));
 
@@ -45,7 +48,7 @@ const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint
         .anisotropyEnable = VK_FALSE,
         .maxLod = (float)num_mip_levels
     }, NULL, &text_texture_image_sampler) != VK_SUCCESS) {
-        return "Failed to create tetxure image sampler\n";
+        return result_sampler_create_failure;
     }
 
     text_glyph_image_width = width;
@@ -62,15 +65,15 @@ const char* begin_text_assets(float max_anistropy, uint32_t num_mip_levels, uint
         0, 1, 2, 2, 3, 0
     };
     
-    if (begin_buffer(&vertex_buffer_create_info, NUM_TEXT_GLYPH_VERTICES, sizeof(text_glyph_vertex_t), text_glyph_vertices, &info->glyph_vertex_staging, &text_glyph_render_info.vertex_buffer, &text_glyph_allocation_info.vertex_allocation) != result_success) {
-        return "Failed to begin creating vertex buffer\n";
+    if ((result = begin_buffer(&vertex_buffer_create_info, NUM_TEXT_GLYPH_VERTICES, sizeof(text_glyph_vertex_t), text_glyph_vertices, &info->glyph_vertex_staging, &text_glyph_render_info.vertex_buffer, &text_glyph_allocation_info.vertex_allocation)) != result_success) {
+        return result;
     }
 
-    if (begin_buffer(&index_buffer_create_info, NUM_TEXT_GLYPH_INDICES, sizeof(uint16_t), text_glyph_indices, &info->glyph_index_staging, &text_glyph_render_info.index_buffer, &text_glyph_allocation_info.index_allocation) != result_success) {
-        return "Failed to begin creating index buffer\n";
+    if ((result = begin_buffer(&index_buffer_create_info, NUM_TEXT_GLYPH_INDICES, sizeof(uint16_t), text_glyph_indices, &info->glyph_index_staging, &text_glyph_render_info.index_buffer, &text_glyph_allocation_info.index_allocation)) != result_success) {
+        return result;
     }
 
-    return NULL;
+    return result_success;
 }
 
 void transfer_text_assets(VkCommandBuffer command_buffer) {
