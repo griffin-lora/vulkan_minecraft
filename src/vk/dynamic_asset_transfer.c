@@ -47,7 +47,7 @@ result_t begin_dynamic_asset_transfer(void) {
 
 result_t end_dynamic_asset_transfer(void) {
     if (vkEndCommandBuffer(dynamic_asset_transfer_command_buffer) != VK_SUCCESS) {
-        return result_failure;
+        return result_command_buffer_end_failure;
     }
 
     pthread_mutex_lock(&queue_submit_mutex);
@@ -56,12 +56,12 @@ result_t end_dynamic_asset_transfer(void) {
         .commandBufferCount = 1,
         .pCommandBuffers = &dynamic_asset_transfer_command_buffer
     }, dynamic_asset_transfer_fence) != VK_SUCCESS) {
-        return result_failure;
+        return result_queue_submit_failure;
     }
     pthread_mutex_unlock(&queue_submit_mutex);
 
     if (vkWaitForFences(device, 1, &dynamic_asset_transfer_fence, VK_TRUE, UINT64_MAX) != VK_SUCCESS) {
-        return result_failure;
+        return result_fences_wait_failure;
     }
 
     vkResetFences(device, 1, &dynamic_asset_transfer_fence);

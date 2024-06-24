@@ -32,7 +32,8 @@ typedef enum {
     result_swapchain_image_acquire_failure,
     result_queue_submit_failure,
     result_swapchain_image_present_failure,
-    result_map_memory_failure,
+    result_memory_map_failure,
+    result_fences_wait_failure,
 
     result_image_pixels_load_failure,
 
@@ -44,6 +45,7 @@ typedef enum {
     result_physical_device_support_unavailable,
     result_suitable_physical_device_unavailable,
     result_supported_depth_image_format_unavailable,
+    result_extension_support_unavailable,
 
     result_text_model_index_invalid,
     result_image_dimensions_invalid

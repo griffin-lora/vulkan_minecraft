@@ -14,6 +14,8 @@ static staging_t region_stagings[NUM_VOXEL_REGIONS];
 static size_t num_inits = 0;
 
 result_t begin_voxel_regions(void) {
+    result_t result;
+
     size_t back_index = voxel_dynamic_assets_front_index.index ^ 1;
 
     voxel_region_render_info_t* render_infos = voxel_region_render_info_arrays[back_index];
@@ -47,8 +49,8 @@ result_t begin_voxel_regions(void) {
                 .left = z - 1u < NUM_XZ_VOXEL_REGIONS ? &voxel_type_arrays[x][z - 1] : NULL,
             }, &vertex_array);
 
-            if (begin_voxel_region_info(&vertex_array, &region_stagings[i], &render_infos[i], &allocation_infos[i]) != result_success) {
-                return result_failure;
+            if ((result = begin_voxel_region_info(&vertex_array, &region_stagings[i], &render_infos[i], &allocation_infos[i])) != result_success) {
+                return result;
             }
         }
     }

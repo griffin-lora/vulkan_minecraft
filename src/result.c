@@ -34,7 +34,8 @@ static const char* get_result_string(result_t result) {
         case result_swapchain_image_acquire_failure: return "Failed to acquire swapchain image";
         case result_queue_submit_failure: return "Failed to submit to graphics queue";
         case result_swapchain_image_present_failure: return "Failed to present swap chain image";
-        case result_map_memory_failure: return "Failed to map buffer memory";
+        case result_memory_map_failure: return "Failed to map buffer memory";
+        case result_fences_wait_failure: return "Faled to wait for fences";
 
         case result_image_pixels_load_failure: return "Failed to load image pixels";
 
@@ -46,6 +47,7 @@ static const char* get_result_string(result_t result) {
         case result_physical_device_support_unavailable: return "Failed to find physical devices with Vulkan support";
         case result_suitable_physical_device_unavailable: return "Failed to get a suitable physical device";
         case result_supported_depth_image_format_unavailable: return "Failed to get a supported depth image format";
+        case result_extension_support_unavailable: return "Failed to get a supported extension";
 
         case result_text_model_index_invalid: return "Invalid text model index";
         case result_image_dimensions_invalid: return "Invalid image dimensions";

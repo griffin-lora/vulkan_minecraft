@@ -48,7 +48,7 @@ result_t create_shader_module(const char* path, VkShaderModule* shader_module) {
 result_t write_to_buffer(VmaAllocation buffer_allocation, size_t num_bytes, const void* data) {
     void* mapped_data;
     if (vmaMapMemory(allocator, buffer_allocation, &mapped_data) != VK_SUCCESS) {
-        return result_map_memory_failure;
+        return result_memory_map_failure;
     }
     memcpy(mapped_data, data, num_bytes);
     vmaUnmapMemory(allocator, buffer_allocation);
@@ -59,7 +59,7 @@ result_t write_to_buffer(VmaAllocation buffer_allocation, size_t num_bytes, cons
 result_t writes_to_buffer(VmaAllocation buffer_allocation, size_t num_write_bytes, size_t num_writes, const void* const data_array[]) {
     void* mapped_data;
     if (vmaMapMemory(allocator, buffer_allocation, &mapped_data) != VK_SUCCESS) {
-        return result_map_memory_failure;
+        return result_memory_map_failure;
     }
     for (size_t i = 0; i < num_writes; i++) {
         memcpy(mapped_data + (i*num_write_bytes), data_array[i], num_write_bytes);

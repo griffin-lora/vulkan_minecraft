@@ -1,5 +1,6 @@
 #include "voxel_dynamic_asset_transfer.h"
 #include "dynamic_asset_transfer.h"
+#include "result.h"
 #include "voxel/region.h"
 #include "vk/core.h"
 #include "vk/defaults.h"
@@ -20,14 +21,14 @@ result_t begin_voxel_region_info(voxel_vertex_array_t* vertex_array, staging_t* 
         DEFAULT_VK_STAGING_BUFFER,
         .size = num_array_bytes
     }, &staging_allocation_create_info, &staging->buffer, &staging->allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
+        return result_buffer_create_failure;
     }
 
     if (vmaCreateBuffer(allocator, &(VkBufferCreateInfo) {
         DEFAULT_VK_VERTEX_BUFFER,
         .size = num_array_bytes
     }, &device_allocation_create_info, &render_info->vertex_buffer, &allocation_info->vertex_allocation, NULL) != VK_SUCCESS) {
-        return result_failure;
+        return result_buffer_create_failure;
     }
 
     uint32_t num_chunks = div_ceil_uint32(num_vertices, NUM_VOXEL_VERTEX_CHUNK_MEMBERS); // Integer ceiling division
@@ -38,7 +39,7 @@ result_t begin_voxel_region_info(voxel_vertex_array_t* vertex_array, staging_t* 
 
     void* mapped_data;
     if (vmaMapMemory(allocator, staging->allocation, &mapped_data) != VK_SUCCESS) {
-        return result_failure;
+        return result_memory_map_failure;
     }
 
     voxel_vertex_chunk_t* chunk = vertex_array->chunk;

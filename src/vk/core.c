@@ -99,7 +99,7 @@ static result_t check_extensions(VkPhysicalDevice physical_device) {
         }
 
         if (not_found) {
-            return result_failure;
+            return result_extension_support_unavailable;
         }
     }
 
@@ -131,6 +131,8 @@ static uint32_t get_presentation_queue_family_index(VkPhysicalDevice physical_de
 }
 
 static result_t get_physical_device(uint32_t num_physical_devices, const VkPhysicalDevice physical_devices[], VkPhysicalDevice* out_physical_device, uint32_t* out_num_surface_formats, uint32_t* out_num_present_modes, queue_family_indices_t* out_queue_family_indices) {
+    result_t result = result_suitable_physical_device_unavailable;
+
     for (size_t i = 0; i < num_physical_devices; i++) {
         VkPhysicalDevice physical_device = physical_devices[i];
 
@@ -154,7 +156,7 @@ static result_t get_physical_device(uint32_t num_physical_devices, const VkPhysi
             continue;
         }
         
-        if (check_extensions(physical_device) != result_success) {
+        if ((result = check_extensions(physical_device)) != result_success) {
             continue;
         }
         
@@ -194,7 +196,7 @@ static result_t get_physical_device(uint32_t num_physical_devices, const VkPhysi
         *out_queue_family_indices = (queue_family_indices_t) {{ graphics_queue_family_index, presentation_queue_family_index }};
         return result_success;
     }
-    return result_suitable_physical_device_unavailable;
+    return result;
 }
 
 static VkSurfaceFormatKHR get_surface_format(uint32_t num_surface_formats, const VkSurfaceFormatKHR surface_formats[]) {

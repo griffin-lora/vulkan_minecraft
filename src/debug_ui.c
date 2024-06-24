@@ -1,4 +1,5 @@
 #include "debug_ui.h"
+#include "result.h"
 #include "vk/text_assets.h"
 #include "timing.h"
 #include "camera.h"
@@ -17,6 +18,8 @@ result_t init_debug_ui(void) {
 }
 
 result_t update_debug_ui(microseconds_t frame_time, float delta) {
+    result_t result;
+
     char message[NUM_TEXT_MODEL_GLYPHS];
     snprintf(message, NUM_TEXT_MODEL_GLYPHS, 
         "FPS: %f\n"
@@ -35,8 +38,8 @@ result_t update_debug_ui(microseconds_t frame_time, float delta) {
         get_milliseconds(end_frame_time)
     );
 
-    if (set_text_model_message(TEXT_MODEL_INDEX, message) != result_success) {
-        return result_failure;
+    if ((result = set_text_model_message(TEXT_MODEL_INDEX, message)) != result_success) {
+        return result;
     }
 
     return result_success;

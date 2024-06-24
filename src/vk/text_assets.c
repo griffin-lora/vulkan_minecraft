@@ -122,8 +122,10 @@ result_t init_text_model(size_t index, vec2s model_position, uint32_t num_glyphs
 }
 
 result_t set_text_model_message(size_t index, const char* message) {
+    result_t result;
+
     if (index >= NUM_TEXT_MODELS || num_text_model_staging_updates >= NUM_TEXT_MODELS) {
-        return result_failure;
+        return result_text_model_index_invalid;
     }
 
     uint32_t num_characters = (uint32_t)strlen(message);
@@ -158,8 +160,8 @@ result_t set_text_model_message(size_t index, const char* message) {
         glyph_position.x += TEXT_GLYPH_SCREEN_SIZE;
     }
 
-    if (write_to_buffer(text_model_staging_allocations[index], sizeof(instances), instances) != result_success) {
-        return result_failure;
+    if ((result = write_to_buffer(text_model_staging_allocations[index], sizeof(instances), instances)) != result_success) {
+        return result;
     }
 
     text_model_render_infos[index].num_instances = num_glyphs;
