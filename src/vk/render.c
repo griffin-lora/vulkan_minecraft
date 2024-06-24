@@ -162,7 +162,7 @@ result_t init_frame_rendering(void) {
     return result_success;
 }
 
-const char* draw_frame(float) {
+result_t draw_frame(float) {
     microseconds_t start_time = get_current_microseconds();
 
     VkSemaphore image_available_semaphore = image_available_semaphores[frame_index];
@@ -184,9 +184,9 @@ const char* draw_frame(float) {
         VkResult result = vkAcquireNextImageKHR(device, swapchain, UINT64_MAX, image_available_semaphore, VK_NULL_HANDLE, &image_index);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
             reinit_swapchain();
-            return NULL;
+            return result_success;
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            return "Failed to acquire swapchain image";
+            return result_swapchain_image_acquire_failure;
         }
     }
 
@@ -202,7 +202,7 @@ const char* draw_frame(float) {
     if (vkBeginCommandBuffer(command_buffer, &(VkCommandBufferBeginInfo) {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
     }) != VK_SUCCESS) {
-        return "result_command_buffer_begin_failure";
+        return result_command_buffer_begin_failure;
     }
 
     update_text_assets(command_buffer);
@@ -241,7 +241,7 @@ const char* draw_frame(float) {
     vkCmdEndRenderPass(command_buffer);
 
     if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
-        return "Failed to end command buffer\n";
+        return result_command_buffer_end_failure;
     }
 
     write_command_buffer_time = get_current_microseconds() - start_time;
@@ -260,7 +260,7 @@ const char* draw_frame(float) {
         .signalSemaphoreCount = 1,
         .pSignalSemaphores = &render_finished_semaphore
     }, in_flight_fence) != VK_SUCCESS) {
-        return "Failed to submit to graphics queue\n";
+        return result_queue_submit_failure;
     }
     pthread_mutex_unlock(&queue_submit_mutex);
 
@@ -279,7 +279,7 @@ const char* draw_frame(float) {
             vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
             reinit_swapchain();
         } else if (result != VK_SUCCESS) {
-            return "Failed to present swap chain image";
+            return result_swapchain_image_present_failure;
         }
     }
 
@@ -288,7 +288,7 @@ const char* draw_frame(float) {
 
     end_frame_time = get_current_microseconds() - start_time;
 
-    return NULL;
+    return result_success;
 }
 
 void term_frame_rendering(void) {

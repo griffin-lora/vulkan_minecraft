@@ -30,9 +30,8 @@ int main(void) {
             return 1;
         }
 
-        msg = draw_frame(delta);
-        if (msg != NULL) {
-            printf("%s", msg);
+        if ((result = draw_frame(delta)) != result_success) {
+            print_result_error(result);
             return 1;
         }
         microseconds_t end = get_current_microseconds() - program_start;

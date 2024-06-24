@@ -29,8 +29,12 @@ typedef enum {
     result_command_buffer_begin_failure,
     result_command_buffer_end_failure,
 
-    result_image_pixels_load_failure,
+    result_swapchain_image_acquire_failure,
+    result_queue_submit_failure,
+    result_swapchain_image_present_failure,
     result_map_memory_failure,
+
+    result_image_pixels_load_failure,
 
     result_file_access_failure,
     result_file_open_failure,

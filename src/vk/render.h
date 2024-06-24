@@ -10,5 +10,5 @@ result_t init_frame_swapchain_dependents(void);
 void term_frame_swapchain_dependents(void);
 
 result_t init_frame_rendering(void);
-const char* draw_frame(float delta);
+result_t draw_frame(float delta);
 void term_frame_rendering(void);
