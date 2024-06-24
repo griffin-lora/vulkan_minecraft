@@ -1,5 +1,6 @@
 #include "dynamic_assets.h"
 #include "dynamic_asset_transfer.h"
+#include "result.h"
 #include "voxel_dynamic_assets.h"
 #include "core.h"
 #include <pthread.h>
@@ -15,24 +16,26 @@ static bool has_update_dynamic_assets_thread = false;
 static atomic_bool update_dynamic_assets_thread_active = false;
 static pthread_t update_dynamic_assets_thread;
 
-void* update_dynamic_assets_thread_main(void*) {
-    if (update_dynamic_assets_thread_info.should_recreate_voxel_regions && begin_voxel_regions() != result_success) {
+static result_t update_dynamic_assets_thread_core() {
+    result_t result;
+
+    if (update_dynamic_assets_thread_info.should_recreate_voxel_regions && (result = begin_voxel_regions()) != result_success) {
         update_dynamic_assets_thread_active = false;
-        return "Failed to begin recreating voxel regions\n";
+        return result;
     }
 
-    if (begin_dynamic_asset_transfer() != result_success) {
+    if ((result = begin_dynamic_asset_transfer()) != result_success) {
         update_dynamic_assets_thread_active = false;
-        return "Failed to begin dynamic asset transfer\n";
+        return result;
     }
 
     if (update_dynamic_assets_thread_info.should_recreate_voxel_regions) {
         transfer_voxel_regions();
     }
 
-    if (end_dynamic_asset_transfer() != result_success) {
+    if ((result = end_dynamic_asset_transfer()) != result_success) {
         update_dynamic_assets_thread_active = false;
-        return "Failed to end dynamic asset transfer\n";
+        return result;
     }
 
     if (update_dynamic_assets_thread_info.should_recreate_voxel_regions) {
@@ -40,6 +43,15 @@ void* update_dynamic_assets_thread_main(void*) {
     }
 
     update_dynamic_assets_thread_active = false;
+    return result_success;
+}
+
+static void* update_dynamic_assets_thread_main(void*) {
+    result_t result = update_dynamic_assets_thread_core();
+    if (result != result_success) {
+        print_result_error(result);
+    }
+
     return NULL;
 }
 
